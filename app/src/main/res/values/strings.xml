@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">MorshuesAndroid</string>
+
+    <!-- MediaPermissionGrantScreen -->
+    <string name="media_permission_grant_button">Grant Media Access</string>
+    <string name="media_permission_full_access_title">Needs full media access</string>
+    <string name="media_permission_full_access_message">
+        You currently have limited access of media.
+        This app needs full access to image/video access
+        Go to Settings → Permissions → Photos and videos → Always allow all.
+    </string>
+    <string name="media_permission_full_access_confirm">Open Settings</string>
+    <string name="media_permission_full_access_cancel">Cancel</string>
+
 </resources>

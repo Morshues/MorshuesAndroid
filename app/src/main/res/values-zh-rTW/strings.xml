@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MorshuesAndroid</string>
+
+    <!-- MediaPermissionGrantScreen -->
+    <string name="media_permission_grant_button">取得完整權限</string>
+    <string name="media_permission_full_access_title">需要完整的相片和影片權限</string>
+    <string name="media_permission_full_access_message">
+        目前只有已選的相片和影片可用。
+        這個應用程式需要完整的相片和影片存取權限，
+        前往系統設定 → 應用程式權限 → 相片和影片權限 → 一律允許全部。
+    </string>
+    <string name="media_permission_full_access_confirm">前往設定</string>
+    <string name="media_permission_full_access_cancel">取消</string>
+
+</resources>
