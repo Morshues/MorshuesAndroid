@@ -23,11 +23,12 @@ import com.morshues.morshuesandroid.ui.theme.MainAndroidTheme
 import com.morshues.morshuesandroid.ui.userprofile.UserProfileRoute
 
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.LaunchedEffect
 
 class MainActivity : ComponentActivity() {
 
-    private val mainViewModel: MainViewModel by viewModels { MainViewModelFactory(application, AppModule.sessionStore, AppModule.authRepository) }
+    private val mainViewModel: MainViewModel by viewModels {
+        MainViewModelFactory(AppModule.sessionStore, AppModule.authRepository)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,16 +45,6 @@ class MainActivity : ComponentActivity() {
                 }
                 else {
                     val navController = rememberNavController()
-
-                    // Global Auth Guard
-                    val userIsLoggedIn by AppModule.sessionStore.user.collectAsState(initial = null)
-                    LaunchedEffect(userIsLoggedIn) {
-                        if (mainUiState.isLoading.not() && userIsLoggedIn == null) {
-                            navController.navigate(AppDestinations.LOGIN_ROUTE) {
-                                popUpTo(0)
-                            }
-                        }
-                    }
 
                     NavHost(navController = navController, startDestination = mainUiState.startRoute!!) {
                         composable(AppDestinations.LOGIN_ROUTE) {

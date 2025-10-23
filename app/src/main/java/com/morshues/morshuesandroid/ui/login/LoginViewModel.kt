@@ -1,11 +1,11 @@
 package com.morshues.morshuesandroid.ui.login
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.morshues.morshuesandroid.data.SessionStore
 import com.morshues.morshuesandroid.data.model.UserDto
 import com.morshues.morshuesandroid.data.repository.AuthRepository
+import com.morshues.morshuesandroid.utils.JwtUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,10 +26,9 @@ data class LoginUiState(
 )
 
 class LoginViewModel(
-    application: Application,
     private val repo: AuthRepository,
     private val sessionStore: SessionStore,
-) : AndroidViewModel(application) {
+) : ViewModel() {
     private val _state = MutableStateFlow(LoginUiState())
     val state: StateFlow<LoginUiState> = _state.asStateFlow()
 
@@ -53,7 +52,8 @@ class LoginViewModel(
             try {
                 val deviceId = sessionStore.getOrCreateDeviceId()
                 val res = repo.login(email, password, deviceId)
-                sessionStore.saveTokens(res.accessToken, res.refreshToken)
+                val expiresAt = JwtUtils.getExpirationTime(res.accessToken)
+                sessionStore.saveTokens(res.accessToken, res.refreshToken, expiresAt)
                 sessionStore.saveUser(res.user)
                 _state.update { it.copy(loginOpState = LoginOpState.Success(res.user)) }
             } catch (e: Exception) {

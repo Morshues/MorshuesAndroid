@@ -3,7 +3,6 @@ package com.morshues.morshuesandroid.ui.login
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.morshues.morshuesandroid.di.AppModule
@@ -12,8 +11,7 @@ import com.morshues.morshuesandroid.di.AppModule
 fun LoginRoute(
     navController: NavController,
 ) {
-    val application = LocalContext.current.applicationContext as android.app.Application
-    val factory = LoginViewModelFactory(application, AppModule.authRepository, AppModule.sessionStore)
+    val factory = LoginViewModelFactory(AppModule.authRepository, AppModule.sessionStore)
     val viewModel: LoginViewModel = viewModel(factory = factory)
     val uiState by viewModel.state.collectAsState()
 

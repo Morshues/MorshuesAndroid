@@ -1,7 +1,7 @@
 package com.morshues.morshuesandroid.ui.permission
 
 import androidx.lifecycle.ViewModel
-import com.morshues.morshuesandroid.util.PermissionHelper
+import com.morshues.morshuesandroid.utils.PermissionHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

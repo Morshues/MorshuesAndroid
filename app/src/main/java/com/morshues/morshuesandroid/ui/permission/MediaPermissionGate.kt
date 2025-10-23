@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.morshues.morshuesandroid.util.PermissionHelper
+import com.morshues.morshuesandroid.utils.PermissionHelper
 
 @Composable
 fun MediaPermissionGate(

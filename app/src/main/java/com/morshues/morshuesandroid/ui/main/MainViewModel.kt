@@ -1,11 +1,11 @@
 package com.morshues.morshuesandroid.ui.main
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.morshues.morshuesandroid.data.SessionStore
 import com.morshues.morshuesandroid.data.repository.AuthRepository
 import com.morshues.morshuesandroid.ui.AppDestinations
+import com.morshues.morshuesandroid.utils.JwtUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -18,10 +18,9 @@ data class MainUiState(
 )
 
 class MainViewModel(
-    application: Application,
     private val sessionStore: SessionStore,
     private val authRepository: AuthRepository
-) : AndroidViewModel(application) {
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
@@ -37,8 +36,9 @@ class MainViewModel(
             }
             try {
                 val response = authRepository.refresh(refreshToken, deviceId)
-                sessionStore.saveTokens(response.accessToken, response.refreshToken)
-                _uiState.update { it.copy(isLoading = false, startRoute = AppDestinations.USER_PROFILE_ROUTE) }
+                val expiresAt = JwtUtils.getExpirationTime(response.accessToken)
+                sessionStore.saveTokens(response.accessToken, response.refreshToken, expiresAt)
+                _uiState.update { it.copy(isLoading = false, startRoute = AppDestinations.FILE_SYNC_ROUTE) }
             } catch (e: Exception) {
                 // Refresh token failed, clear session and go to login
                 sessionStore.clear()

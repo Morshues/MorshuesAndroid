@@ -8,13 +8,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.morshues.morshuesandroid.di.AppModule
 
 @Composable
 fun UserProfileRoute() {
-    val application = LocalContext.current.applicationContext as android.app.Application
-    val factory = UserProfileViewModelFactory(application, com.morshues.morshuesandroid.di.AppModule.sessionStore)
+    val factory = UserProfileViewModelFactory(AppModule.sessionStore)
     val viewModel: UserProfileViewModel = viewModel(factory = factory)
     val user by viewModel.user.collectAsState(initial = null)
 

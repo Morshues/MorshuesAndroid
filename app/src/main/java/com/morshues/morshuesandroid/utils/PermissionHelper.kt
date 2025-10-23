@@ -1,4 +1,4 @@
-package com.morshues.morshuesandroid.util
+package com.morshues.morshuesandroid.utils
 
 import android.Manifest
 import android.content.Context
