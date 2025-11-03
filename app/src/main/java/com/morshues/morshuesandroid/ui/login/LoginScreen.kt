@@ -26,7 +26,7 @@ fun LoginScreen(
 ) {
     LaunchedEffect(uiState.loginOpState) {
         if (uiState.loginOpState is LoginOpState.Success) {
-            navController.navigate(AppDestinations.USER_PROFILE_ROUTE) {
+            navController.navigate(AppDestinations.FILE_SYNC_ROUTE) {
                 popUpTo(0)
             }
         }

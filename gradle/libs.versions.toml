@@ -1,6 +1,7 @@
 [versions]
 activityCompose = "1.11.0"
 agp = "8.13.0"
+coilCompose = "3.3.0"
 datastorePreferences = "1.1.7"
 kotlin = "2.2.20"
 coreKtx = "1.17.0"
@@ -14,18 +15,26 @@ kotlinxSerializationJson = "1.9.0"
 loggingInterceptor = "5.1.0"
 material = "1.13.0"
 retrofit = "3.0.0"
+roomRuntime = "2.8.2"
 runtime = "1.9.2"
 foundationLayout = "1.9.2"
 material3 = "1.4.0"
 uiToolingPreview = "1.9.2"
 uiTooling = "1.9.2"
 navigationCompose = "2.9.5"
+workRuntimeKtx = "2.11.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
+coil-video = { module = "io.coil-kt.coil3:coil-video", version.ref = "coilCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 jwtdecode = { module = "com.auth0.android:jwtdecode", version.ref = "jwtdecode" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

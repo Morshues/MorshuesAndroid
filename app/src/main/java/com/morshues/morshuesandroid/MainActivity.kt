@@ -23,6 +23,7 @@ import com.morshues.morshuesandroid.ui.theme.MainAndroidTheme
 import com.morshues.morshuesandroid.ui.userprofile.UserProfileRoute
 
 import androidx.activity.enableEdgeToEdge
+import com.morshues.morshuesandroid.ui.filesync.FileSyncRoute
 
 class MainActivity : ComponentActivity() {
 
@@ -52,6 +53,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(AppDestinations.USER_PROFILE_ROUTE) {
                             UserProfileRoute()
+                        }
+                        composable(AppDestinations.FILE_SYNC_ROUTE) {
+                            FileSyncRoute(navController = navController)
                         }
                     }
                 }

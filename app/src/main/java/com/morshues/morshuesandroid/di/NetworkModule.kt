@@ -6,6 +6,7 @@ import com.morshues.morshuesandroid.data.api.ApiService
 import com.morshues.morshuesandroid.data.api.AuthApiService
 import com.morshues.morshuesandroid.data.network.DynamicUrlInterceptor
 import com.morshues.morshuesandroid.data.network.TokenAuthenticator
+import com.morshues.morshuesandroid.data.network.TokenInterceptor
 import com.morshues.morshuesandroid.data.repository.AuthRepository
 import com.morshues.morshuesandroid.settings.SettingsManager
 import okhttp3.OkHttpClient
@@ -45,6 +46,7 @@ object NetworkModule {
     ): OkHttpClient {
         return OkHttpClient.Builder().apply {
             addInterceptor(DynamicUrlInterceptor(settingsManager))
+            addInterceptor(TokenInterceptor(sessionStore, authRepository))
             authenticator(TokenAuthenticator(sessionStore, authRepository))
             if (BuildConfig.DEBUG) {
                 addInterceptor(HttpLoggingInterceptor().apply {

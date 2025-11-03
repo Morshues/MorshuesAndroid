@@ -1,8 +1,12 @@
 package com.morshues.morshuesandroid.di
 
 import android.content.Context
+import androidx.work.WorkManager
 import com.morshues.morshuesandroid.data.SessionStore
 import com.morshues.morshuesandroid.data.repository.AuthRepository
+import com.morshues.morshuesandroid.data.repository.LocalFileRepository
+import com.morshues.morshuesandroid.data.repository.RemoteFileRepository
+import com.morshues.morshuesandroid.data.repository.SyncingFolderRepository
 import com.morshues.morshuesandroid.settings.SettingsManager
 
 /**
@@ -14,6 +18,7 @@ object AppModule {
 
     fun init(context: Context) {
         applicationContext = context.applicationContext
+        DatabaseModule.init(applicationContext)
     }
 
     val settingsManager: SettingsManager by lazy {
@@ -34,5 +39,21 @@ object AppModule {
 
     private val apiService by lazy {
         NetworkModule.createApiService(settingsManager, sessionStore, authRepository)
+    }
+
+    val remoteFileRepository: RemoteFileRepository by lazy {
+        RemoteFileRepository(apiService)
+    }
+
+    val localFileRepository: LocalFileRepository by lazy {
+        LocalFileRepository(applicationContext)
+    }
+
+    val syncingFolderRepository: SyncingFolderRepository by lazy {
+        DatabaseModule.syncingFolderRepository
+    }
+
+    val workManager: WorkManager by lazy {
+        WorkManager.getInstance(applicationContext)
     }
 }
