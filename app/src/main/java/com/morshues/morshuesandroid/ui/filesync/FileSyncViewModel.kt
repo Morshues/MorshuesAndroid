@@ -84,6 +84,10 @@ class FileSyncViewModel(
         }
     }
 
+    fun canBackward(): Boolean {
+        return _uiState.value.breadCrumbs.size > 1
+    }
+
     fun backward(): Boolean {
         if (_uiState.value.breadCrumbs.size <= 1) {
             return false

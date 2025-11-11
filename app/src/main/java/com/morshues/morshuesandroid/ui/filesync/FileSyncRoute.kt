@@ -25,6 +25,7 @@ fun FileSyncRoute(
             navController = navController,
             uiState = uiState,
             onFileItemSelected = fileSyncViewModel::onFileItemSelected,
+            canBackward = fileSyncViewModel::canBackward,
             onBackward = fileSyncViewModel::backward,
             setSyncingFolder = fileSyncViewModel::setSyncingFolder,
             onErrorDismissed = fileSyncViewModel::clearErrorMessage,

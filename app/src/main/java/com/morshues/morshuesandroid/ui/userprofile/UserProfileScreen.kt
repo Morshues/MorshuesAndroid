@@ -10,44 +10,61 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.morshues.morshuesandroid.data.model.UserDto
+import com.morshues.morshuesandroid.ui.components.CommonTopBar
 import com.morshues.morshuesandroid.ui.theme.MainAndroidTheme
 
 @Composable
 fun UserProfileScreen(
+    navController: NavController,
     user: UserDto,
     onLogoutClick: () -> Unit,
 ) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                "Welcome, ${user.name}!",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary,
+    Scaffold(
+        topBar = {
+            CommonTopBar(
+                navController = navController,
+                title = "Profile",
+                onNavigationClick = { navController.popBackStack() },
             )
-
-            Spacer(Modifier.height(16.dp))
-
-            Button(
-                onClick = onLogoutClick,
-                modifier = Modifier.fillMaxWidth(),
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Text("Logout")
+                Text(
+                    "Welcome, ${user.name}!",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                Button(
+                    onClick = onLogoutClick,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Logout")
+                }
             }
         }
     }
@@ -58,6 +75,10 @@ fun UserProfileScreen(
 @Composable
 fun UserProfileScreenPreview() {
     MainAndroidTheme {
-        UserProfileScreen(user = UserDto(name = "Preview User", email = "")) {}
+        UserProfileScreen(
+            navController = rememberNavController(),
+            user = UserDto(name = "Preview User", email = ""),
+            onLogoutClick = {}
+        )
     }
 }

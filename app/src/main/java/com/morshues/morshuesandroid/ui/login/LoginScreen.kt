@@ -1,5 +1,7 @@
 package com.morshues.morshuesandroid.ui.login
 
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -14,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.morshues.morshuesandroid.ui.AppDestinations
+import com.morshues.morshuesandroid.ui.components.CommonTopBar
 import com.morshues.morshuesandroid.ui.theme.MainAndroidTheme
 
 @Composable
@@ -24,6 +27,8 @@ fun LoginScreen(
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
 ) {
+    val activity = LocalActivity.current
+
     LaunchedEffect(uiState.loginOpState) {
         if (uiState.loginOpState is LoginOpState.Success) {
             navController.navigate(AppDestinations.FILE_SYNC_ROUTE) {
@@ -32,71 +37,89 @@ fun LoginScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(
+    BackHandler {
+        activity?.finish()
+    }
+
+    Scaffold(
+        topBar = {
+            CommonTopBar(
+                navController = navController,
+                title = "Login",
+            )
+        }
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                "Login",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    "Login",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
 
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-            OutlinedTextField(
-                value = uiState.email,
-                onValueChange = onEmailChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Email") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                singleLine = true,
-                isError = uiState.loginOpState is LoginOpState.Error
-            )
+                OutlinedTextField(
+                    value = uiState.email,
+                    onValueChange = onEmailChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Email") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    singleLine = true,
+                    isError = uiState.loginOpState is LoginOpState.Error
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = uiState.password,
-                onValueChange = onPasswordChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                singleLine = true,
-                isError = uiState.loginOpState is LoginOpState.Error
-            )
+                OutlinedTextField(
+                    value = uiState.password,
+                    onValueChange = onPasswordChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    singleLine = true,
+                    isError = uiState.loginOpState is LoginOpState.Error
+                )
 
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .height(24.dp)
-                .padding(top = 8.dp)) {
-                if (uiState.loginOpState is LoginOpState.Error) {
-                    Text(
-                        text = uiState.loginOpState.message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .padding(top = 8.dp)) {
+                    if (uiState.loginOpState is LoginOpState.Error) {
+                        Text(
+                            text = uiState.loginOpState.message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onLoginClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = uiState.loginOpState !is LoginOpState.Loading
+                ) {
+                    Text("Login")
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = onLoginClick,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = uiState.loginOpState !is LoginOpState.Loading
-            ) {
-                Text("Login")
+            if (uiState.loginOpState is LoginOpState.Loading) {
+                CircularProgressIndicator()
             }
-        }
-
-        if (uiState.loginOpState is LoginOpState.Loading) {
-            CircularProgressIndicator()
         }
     }
 }

@@ -63,7 +63,7 @@ object NetworkModule {
     fun createAuthApiService(settingsManager: SettingsManager): AuthApiService {
         val client = createAuthOkHttpClient(settingsManager)
         return Retrofit.Builder()
-            .baseUrl(BuildConfig.BASE_URL)
+            .baseUrl(SettingsManager.DEFAULT_SERVER_PATH)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -81,7 +81,7 @@ object NetworkModule {
     ): ApiService {
         val client = createProtectedOkHttpClient(settingsManager, sessionStore, authRepository)
         return Retrofit.Builder()
-            .baseUrl(BuildConfig.BASE_URL)
+            .baseUrl(SettingsManager.DEFAULT_SERVER_PATH)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

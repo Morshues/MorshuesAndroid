@@ -9,16 +9,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.morshues.morshuesandroid.di.AppModule
 
 @Composable
-fun UserProfileRoute() {
+fun UserProfileRoute(navController: NavController) {
     val factory = UserProfileViewModelFactory(AppModule.sessionStore)
     val viewModel: UserProfileViewModel = viewModel(factory = factory)
     val user by viewModel.user.collectAsState(initial = null)
 
     if (user != null) {
         UserProfileScreen(
+            navController = navController,
             user = user!!,
             onLogoutClick = { viewModel.logout() }
         )

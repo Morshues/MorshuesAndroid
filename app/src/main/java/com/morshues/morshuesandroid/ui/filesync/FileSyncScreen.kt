@@ -23,7 +23,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -43,6 +42,7 @@ import com.morshues.morshuesandroid.data.db.entity.SyncingFolder
 import com.morshues.morshuesandroid.data.model.FileItem
 import com.morshues.morshuesandroid.data.model.FolderItem
 import com.morshues.morshuesandroid.data.model.StorageItem
+import com.morshues.morshuesandroid.ui.components.CommonTopBar
 import com.morshues.morshuesandroid.ui.theme.MainAndroidTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,6 +51,7 @@ fun FileSyncScreen(
     navController: NavController,
     uiState: FileSyncUiState,
     onFileItemSelected: (StorageItem) -> Unit,
+    canBackward: () -> Boolean = { false },
     onBackward: () -> Boolean,
     setSyncingFolder: (String, Boolean) -> Unit,
     onErrorDismissed: () -> Unit = {},
@@ -81,29 +82,21 @@ fun FileSyncScreen(
             SnackbarHost(hostState = snackbarHostState)
         },
         topBar = {
-            TopAppBar(
-                title= {
+            CommonTopBar(
+                navController = navController,
+                titleContent = {
                     Text(
                         text = uiState.breadCrumbs.joinToString(" / ") { it.name },
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
+                showNavigation = canBackward(),
+                onNavigationClick = { onBackward() },
                 actions = {
                     if (uiState.isProcessing) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    IconButton(
-                         onClick = {
-
-                         },
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_menu_24),
-                            contentDescription = "Sync",
-                            modifier = Modifier.size(24.dp),
                         )
                     }
                 }
@@ -218,6 +211,7 @@ fun FileSyncScreenPreview() {
                 currentFolderRemoteFilesSet = mockPreviewFolderRemoteFiles(),
             ),
             onFileItemSelected = {},
+            canBackward = { true },
             onBackward = { false },
             setSyncingFolder = { _,_ -> },
             onErrorDismissed = {},

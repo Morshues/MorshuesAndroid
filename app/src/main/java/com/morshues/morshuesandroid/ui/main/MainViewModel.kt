@@ -1,5 +1,6 @@
 package com.morshues.morshuesandroid.ui.main
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.morshues.morshuesandroid.data.SessionStore
@@ -40,10 +41,14 @@ class MainViewModel(
                 sessionStore.saveTokens(response.accessToken, response.refreshToken, expiresAt)
                 _uiState.update { it.copy(isLoading = false, startRoute = AppDestinations.FILE_SYNC_ROUTE) }
             } catch (e: Exception) {
-                // Refresh token failed, clear session and go to login
+                Log.i(TAG, "Refresh token failed: (${e.message})")
                 sessionStore.clear()
                 _uiState.update { it.copy(isLoading = false, startRoute = AppDestinations.LOGIN_ROUTE) }
             }
         }
+    }
+
+    companion object {
+        const val TAG = "MainViewModel"
     }
 }
