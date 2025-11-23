@@ -3,6 +3,7 @@ package com.morshues.morshuesandroid.di
 import android.content.Context
 import androidx.room.Room
 import com.morshues.morshuesandroid.data.db.AppDatabase
+import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
 import com.morshues.morshuesandroid.data.repository.SyncingFolderRepository
 
 object DatabaseModule {
@@ -26,5 +27,13 @@ object DatabaseModule {
 
     val syncingFolderRepository: SyncingFolderRepository by lazy {
         SyncingFolderRepository(syncingFolderDao)
+    }
+
+    private val syncTaskDao by lazy {
+        appDatabase.syncTaskDao()
+    }
+
+    val syncTaskRepository: SyncTaskRepository by lazy {
+        SyncTaskRepository(syncTaskDao)
     }
 }

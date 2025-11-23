@@ -55,7 +55,7 @@ class SettingsManager(private val context: Context) {
     }
 
     companion object {
-        const val DEFAULT_SERVER_PATH = "http://192.168.2.2:3000/"
+        const val DEFAULT_SERVER_PATH = "http://10.0.2.2:3000/"
         private val DEFAULT_ROOT_URL_SET = setOf(DEFAULT_SERVER_PATH)
         private val SERVER_PATH_KEY = stringPreferencesKey("server_path")
         private val ROOT_URL_LIST_KEY = stringSetPreferencesKey("root_url_list")

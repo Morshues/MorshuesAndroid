@@ -17,7 +17,10 @@ fun FileSyncRoute(
             AppModule.remoteFileRepository,
             AppModule.localFileRepository,
             AppModule.syncingFolderRepository,
-            AppModule.workManager,
+            AppModule.syncTaskRepository,
+            AppModule.syncTaskEnqueuer,
+            AppModule.syncFolderUseCase,
+            AppModule.processSyncQueueUseCase,
         )
         val fileSyncViewModel: FileSyncViewModel = viewModel(factory = factory)
         val uiState by fileSyncViewModel.uiState.collectAsState()

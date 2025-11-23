@@ -6,6 +6,7 @@ import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.video.VideoFrameDecoder
+import com.morshues.morshuesandroid.data.sync.PeriodicSyncScheduler
 import com.morshues.morshuesandroid.data.worker.AppWorkerFactory
 import com.morshues.morshuesandroid.di.AppModule
 
@@ -13,6 +14,7 @@ class MyApplication : Application(), SingletonImageLoader.Factory, Configuration
     override fun onCreate() {
         super.onCreate()
         AppModule.init(this)
+        PeriodicSyncScheduler.init(this)
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
@@ -27,8 +29,13 @@ class MyApplication : Application(), SingletonImageLoader.Factory, Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(
                 AppWorkerFactory(
+                    syncingFolderRepository = AppModule.syncingFolderRepository,
                     remoteFileRepository = AppModule.remoteFileRepository,
-                    localFileRepository = AppModule.localFileRepository
+                    localFileRepository = AppModule.localFileRepository,
+                    syncTaskRepository = AppModule.syncTaskRepository,
+                    syncFolderUseCase = AppModule.syncFolderUseCase,
+                    // Use provider function to break circular dependency
+                    processSyncQueueUseCaseProvider = { AppModule.processSyncQueueUseCase },
                 )
             )
             .build()

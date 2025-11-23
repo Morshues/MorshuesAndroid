@@ -98,6 +98,13 @@ fun FileSyncScreen(
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp)
                         )
+                    } else if (uiState.isSyncing) {
+                        Icon(
+                            painter = painterResource(R.drawable.outline_cloud_upload_24),
+                            contentDescription = "Syncing...",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
             )
@@ -232,6 +239,28 @@ fun FileSyncScreenLoadingPreview() {
                 syncingFolders = mockPreviewSyncingFolders(),
                 currentFolderRemoteFilesSet = mockPreviewFolderRemoteFiles(),
                 isProcessing = true,
+            ),
+            onFileItemSelected = {},
+            onBackward = { false },
+            setSyncingFolder = { _,_ -> },
+            onErrorDismissed = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Syncing - Light")
+@Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES, name = "Syncing - Dark")
+@Composable
+fun FileSyncScreenSyncingPreview() {
+    MainAndroidTheme {
+        FileSyncScreen(
+            navController = rememberNavController(),
+            uiState = FileSyncUiState(
+                breadCrumbs = ArrayDeque(mockPreviewBreadCrumbs),
+                files = mockPreviewItemList(),
+                syncingFolders = mockPreviewSyncingFolders(),
+                currentFolderRemoteFilesSet = mockPreviewFolderRemoteFiles(),
+                syncPendingCount = 1,
             ),
             onFileItemSelected = {},
             onBackward = { false },
