@@ -1,5 +1,6 @@
 package com.morshues.morshuesandroid.data.sync
 
+import android.content.Context
 import androidx.work.Constraints
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
@@ -9,13 +10,19 @@ import com.morshues.morshuesandroid.data.db.entity.SyncTask
 import com.morshues.morshuesandroid.data.db.entity.SyncType
 import com.morshues.morshuesandroid.data.worker.FileDownloadWorker
 import com.morshues.morshuesandroid.data.worker.FileUploadWorker
+import com.morshues.morshuesandroid.settings.SettingsManager
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import java.util.UUID
 
 /**
  * Helper class to enqueue upload/download workers for sync tasks.
  * Shared between FileSyncViewModel and SyncProcessorWorker.
  */
-class SyncTaskEnqueuer(private val workManager: WorkManager) {
+class SyncTaskEnqueuer(
+    private val context: Context,
+    private val workManager: WorkManager,
+) {
 
     /**
      * Enqueue an upload or download worker for the given task.
@@ -25,6 +32,18 @@ class SyncTaskEnqueuer(private val workManager: WorkManager) {
         return when (task.syncType) {
             SyncType.UPLOAD -> enqueueUploadWorker(task)
             SyncType.DOWNLOAD -> enqueueDownloadWorker(task)
+        }
+    }
+
+    private fun getNetworkType(): NetworkType {
+        val settingsManager = SettingsManager(context)
+        val networkTypeString = runBlocking {
+            settingsManager.getSyncNetworkType().first()
+        }
+        return when (networkTypeString) {
+            SettingsManager.NETWORK_TYPE_ANY -> NetworkType.CONNECTED
+            SettingsManager.NETWORK_TYPE_WIFI_ONLY -> NetworkType.UNMETERED
+            else -> NetworkType.UNMETERED
         }
     }
 
@@ -39,7 +58,7 @@ class SyncTaskEnqueuer(private val workManager: WorkManager) {
             .setInputData(uploadData)
             .setConstraints(
                 Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .setRequiredNetworkType(getNetworkType())
                     .build()
             )
             .addTag("$TAG_PREFIX_UPLOAD${task.folderPath}")
@@ -61,7 +80,7 @@ class SyncTaskEnqueuer(private val workManager: WorkManager) {
             .setInputData(downloadData)
             .setConstraints(
                 Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .setRequiredNetworkType(getNetworkType())
                     .build()
             )
             .addTag("$TAG_PREFIX_DOWNLOAD${task.folderPath}")

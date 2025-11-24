@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.morshues.morshuesandroid.R
+import com.morshues.morshuesandroid.settings.SettingsManager
 import com.morshues.morshuesandroid.ui.components.CommonConfirmDialog
 import com.morshues.morshuesandroid.ui.components.CommonTopBar
 import com.morshues.morshuesandroid.ui.components.CommonEditStringDialog
@@ -124,6 +125,37 @@ fun SettingsScreen(
                     }
                 }
             }
+
+            // Network Type Section
+            Text(
+                text = "Sync Network",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
+            )
+            Text(
+                text = "Control when files can be uploaded and downloaded",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            NetworkTypeItem(
+                label = "WiFi Only",
+                description = "Sync only when connected to WiFi",
+                isSelected = uiState.syncNetworkType == SettingsManager.NETWORK_TYPE_WIFI_ONLY,
+                onSelect = {
+                    onAction(SettingsAction.SyncNetwork.SetNetworkType(SettingsManager.NETWORK_TYPE_WIFI_ONLY))
+                }
+            )
+
+            NetworkTypeItem(
+                label = "WiFi or Mobile Data",
+                description = "Sync on any network connection (may use mobile data)",
+                isSelected = uiState.syncNetworkType == SettingsManager.NETWORK_TYPE_ANY,
+                onSelect = {
+                    onAction(SettingsAction.SyncNetwork.SetNetworkType(SettingsManager.NETWORK_TYPE_ANY))
+                }
+            )
         }
     }
 
@@ -189,6 +221,50 @@ fun RootUrlItem(
                     painter = painterResource(R.drawable.rounded_delete_24),
                     contentDescription = "Delete",
                     tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun NetworkTypeItem(
+    label: String,
+    description: String,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onSelect() }
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            RadioButton(
+                selected = isSelected,
+                onClick = onSelect,
+                modifier = Modifier.size(24.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .weight(1f)
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

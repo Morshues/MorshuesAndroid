@@ -17,6 +17,10 @@ sealed interface SettingsAction {
         data class Delete(val url: String) : ServerUrl
     }
 
+    sealed interface SyncNetwork : SettingsAction {
+        data class SetNetworkType(val networkType: String) : SyncNetwork
+    }
+
     // Future: Add more setting categories here
     // sealed interface Theme : SettingsAction { ... }
     // sealed interface Notifications : SettingsAction { ... }
@@ -25,6 +29,7 @@ sealed interface SettingsAction {
 data class SettingsUiState(
     val currentServerPath: String = "",
     val rootUrlList: List<String> = emptyList(),
+    val syncNetworkType: String = SettingsManager.DEFAULT_SYNC_NETWORK_TYPE,
     val errorMessage: String? = null,
 )
 
@@ -47,6 +52,12 @@ class SettingsViewModel(
                 _uiState.update { it.copy(rootUrlList = urlList) }
             }
             .launchIn(viewModelScope)
+
+        settingsManager.getSyncNetworkType()
+            .onEach { networkType ->
+                _uiState.update { it.copy(syncNetworkType = networkType) }
+            }
+            .launchIn(viewModelScope)
     }
 
     fun clearErrorMessage() {
@@ -58,6 +69,7 @@ class SettingsViewModel(
             is SettingsAction.ServerUrl.Select -> selectServerPath(action.url)
             is SettingsAction.ServerUrl.Add -> addUrl(action.url)
             is SettingsAction.ServerUrl.Delete -> deleteUrl(action.url)
+            is SettingsAction.SyncNetwork.SetNetworkType -> setSyncNetworkType(action.networkType)
         }
     }
 
@@ -94,6 +106,12 @@ class SettingsViewModel(
             }
 
             settingsManager.removeRootUrl(url)
+        }
+    }
+
+    private fun setSyncNetworkType(networkType: String) {
+        viewModelScope.launch {
+            settingsManager.setSyncNetworkType(networkType)
         }
     }
 }

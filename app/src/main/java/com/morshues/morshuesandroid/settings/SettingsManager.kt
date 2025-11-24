@@ -54,10 +54,27 @@ class SettingsManager(private val context: Context) {
         }
     }
 
+    fun getSyncNetworkType(): Flow<String> {
+        return context.dataStore.data.map { preferences ->
+            preferences[SYNC_NETWORK_TYPE_KEY] ?: DEFAULT_SYNC_NETWORK_TYPE
+        }
+    }
+
+    suspend fun setSyncNetworkType(networkType: String) {
+        context.dataStore.edit { preferences ->
+            preferences[SYNC_NETWORK_TYPE_KEY] = networkType
+        }
+    }
+
     companion object {
         const val DEFAULT_SERVER_PATH = "http://10.0.2.2:3000/"
         private val DEFAULT_ROOT_URL_SET = setOf(DEFAULT_SERVER_PATH)
         private val SERVER_PATH_KEY = stringPreferencesKey("server_path")
         private val ROOT_URL_LIST_KEY = stringSetPreferencesKey("root_url_list")
+
+        const val DEFAULT_SYNC_NETWORK_TYPE = "WIFI_ONLY"
+        const val NETWORK_TYPE_WIFI_ONLY = "WIFI_ONLY"
+        const val NETWORK_TYPE_ANY = "ANY"
+        private val SYNC_NETWORK_TYPE_KEY = stringPreferencesKey("sync_network_type")
     }
 }

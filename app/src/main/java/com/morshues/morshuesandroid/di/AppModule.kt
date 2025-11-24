@@ -62,7 +62,7 @@ object AppModule {
     }
 
     val syncTaskEnqueuer: SyncTaskEnqueuer by lazy {
-        SyncTaskEnqueuer(workManager)
+        SyncTaskEnqueuer(applicationContext, workManager)
     }
 
     val syncFolderUseCase: SyncFolderUseCase by lazy {
