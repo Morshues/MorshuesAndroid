@@ -43,6 +43,7 @@ import com.morshues.morshuesandroid.data.model.FileItem
 import com.morshues.morshuesandroid.data.model.FolderItem
 import com.morshues.morshuesandroid.data.model.StorageItem
 import com.morshues.morshuesandroid.ui.components.CommonTopBar
+import com.morshues.morshuesandroid.ui.components.MenuItem
 import com.morshues.morshuesandroid.ui.theme.MainAndroidTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,6 +58,7 @@ fun FileSyncScreen(
     onErrorDismissed: () -> Unit = {},
 ) {
     val syncingFolderPaths = uiState.syncingFolderPaths
+    val currentFolderPath = uiState.currentFolder?.path
     val isCurrentFolderSyncing = uiState.isCurrentFolderSyncing
     val currentFolderRemoteFiles = uiState.currentFolderRemoteFilesSet
     val snackbarHostState = remember { SnackbarHostState() }
@@ -93,7 +95,7 @@ fun FileSyncScreen(
                 },
                 showNavigation = canBackward(),
                 onNavigationClick = { onBackward() },
-                actions = {
+                statusAction = {
                     if (uiState.isProcessing) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp)
@@ -106,7 +108,19 @@ fun FileSyncScreen(
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                }
+                },
+                menuItems = listOf(
+                    MenuItem(
+                        text = "Sync Now",
+                        onClick = {
+                            currentFolderPath?.let {
+                                setSyncingFolder(it, true)
+                            }
+                        },
+                        iconRes = R.drawable.outline_sync_24,
+                        contentDescription = "Sync Now"
+                    )
+                )
             )
         }
     ) { paddingValues ->
