@@ -35,7 +35,7 @@ class MyApplication : Application(), SingletonImageLoader.Factory, Configuration
                     syncTaskRepository = AppModule.syncTaskRepository,
                     syncFolderUseCase = AppModule.syncFolderUseCase,
                     // Use provider function to break circular dependency
-                    processSyncQueueUseCaseProvider = { AppModule.processSyncQueueUseCase },
+                    syncTaskEnqueuerProvider = { AppModule.syncTaskEnqueuer },
                 )
             )
             .build()

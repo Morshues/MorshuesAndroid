@@ -9,7 +9,6 @@ import com.morshues.morshuesandroid.data.repository.RemoteFileRepository
 import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
 import com.morshues.morshuesandroid.data.repository.SyncingFolderRepository
 import com.morshues.morshuesandroid.data.sync.SyncTaskEnqueuer
-import com.morshues.morshuesandroid.domain.usecase.ProcessSyncQueueUseCase
 import com.morshues.morshuesandroid.domain.usecase.SyncFolderUseCase
 import com.morshues.morshuesandroid.settings.SettingsManager
 
@@ -67,10 +66,6 @@ object AppModule {
 
     val syncFolderUseCase: SyncFolderUseCase by lazy {
         SyncFolderUseCase(localFileRepository, remoteFileRepository, syncTaskRepository)
-    }
-
-    val processSyncQueueUseCase: ProcessSyncQueueUseCase by lazy {
-        ProcessSyncQueueUseCase(syncTaskRepository, syncTaskEnqueuer)
     }
 
     val workManager: WorkManager by lazy {

@@ -8,15 +8,15 @@ import com.morshues.morshuesandroid.data.repository.LocalFileRepository
 import com.morshues.morshuesandroid.data.repository.RemoteFileRepository
 import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
 import com.morshues.morshuesandroid.data.repository.SyncingFolderRepository
-import com.morshues.morshuesandroid.domain.usecase.ProcessSyncQueueUseCase
+import com.morshues.morshuesandroid.data.sync.SyncTaskEnqueuer
 import com.morshues.morshuesandroid.domain.usecase.SyncFolderUseCase
 
 /**
  * Custom WorkerFactory that provides proper dependency injection for Workers.
  * This replaces the direct AppModule access in Worker classes.
  *
- * Note: processSyncQueueUseCaseProvider is a lazy provider to break circular dependency:
- * AppModule -> ProcessSyncQueueUseCase -> SyncTaskEnqueuer -> WorkManager -> AppWorkerFactory
+ * Note: syncTaskEnqueuerProvider is a lazy provider to break circular dependency:
+ * AppModule -> SyncTaskEnqueuer -> WorkManager -> AppWorkerFactory
  */
 class AppWorkerFactory(
     private val syncingFolderRepository: SyncingFolderRepository,
@@ -24,7 +24,7 @@ class AppWorkerFactory(
     private val localFileRepository: LocalFileRepository,
     private val syncTaskRepository: SyncTaskRepository,
     private val syncFolderUseCase: SyncFolderUseCase,
-    private val processSyncQueueUseCaseProvider: () -> ProcessSyncQueueUseCase,
+    private val syncTaskEnqueuerProvider: () -> SyncTaskEnqueuer,
 ) : WorkerFactory() {
 
     override fun createWorker(
@@ -43,7 +43,7 @@ class AppWorkerFactory(
                 appContext,
                 workerParameters,
                 syncTaskRepository,
-                processSyncQueueUseCaseProvider(), // Lazy evaluation breaks circular dependency
+                syncTaskEnqueuerProvider(), // Lazy evaluation breaks circular dependency
             )
             FileUploadWorker::class.java.name -> {
                 FileUploadWorker(

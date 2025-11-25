@@ -2,12 +2,12 @@ package com.morshues.morshuesandroid.ui.filesync
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.work.WorkManager
 import com.morshues.morshuesandroid.data.repository.RemoteFileRepository
 import com.morshues.morshuesandroid.data.repository.LocalFileRepository
 import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
 import com.morshues.morshuesandroid.data.repository.SyncingFolderRepository
 import com.morshues.morshuesandroid.data.sync.SyncTaskEnqueuer
-import com.morshues.morshuesandroid.domain.usecase.ProcessSyncQueueUseCase
 import com.morshues.morshuesandroid.domain.usecase.SyncFolderUseCase
 
 class FileSyncViewModelFactory(
@@ -17,7 +17,7 @@ class FileSyncViewModelFactory(
     private val syncTaskRepository: SyncTaskRepository,
     private val syncTaskEnqueuer: SyncTaskEnqueuer,
     private val syncFolderUseCase: SyncFolderUseCase,
-    private val processSyncQueueUseCase: ProcessSyncQueueUseCase,
+    private val workManager: WorkManager,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(FileSyncViewModel::class.java)) {
@@ -29,7 +29,7 @@ class FileSyncViewModelFactory(
                 syncTaskRepository,
                 syncTaskEnqueuer,
                 syncFolderUseCase,
-                processSyncQueueUseCase,
+                workManager,
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

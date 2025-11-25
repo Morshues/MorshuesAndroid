@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
-import com.morshues.morshuesandroid.domain.usecase.ProcessSyncQueueUseCase
+import com.morshues.morshuesandroid.data.sync.SyncTaskEnqueuer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
@@ -23,7 +23,7 @@ class SyncProcessorWorker(
     context: Context,
     params: WorkerParameters,
     private val syncTaskRepository: SyncTaskRepository,
-    private val processSyncQueueUseCase: ProcessSyncQueueUseCase,
+    private val syncTaskEnqueuer: SyncTaskEnqueuer,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -52,12 +52,12 @@ class SyncProcessorWorker(
                     continue
                 }
 
-                val result = processSyncQueueUseCase(maxTasks = availableSlots)
-                result.onSuccess { count ->
-                    totalProcessed += availableSlots
-                    Log.d(TAG, "Enqueued $count tasks (total: $totalProcessed)")
-                }.onFailure { e ->
-                    Log.e(TAG, "Error processing queue: ${e.message}", e)
+                val successCount = processSyncQueue(maxTasks = availableSlots)
+                if (successCount >= 0) {
+                    totalProcessed += successCount
+                    Log.d(TAG, "Enqueued $successCount tasks (total: $totalProcessed)")
+                } else {
+                    Log.e(TAG, "Error processing queue")
                 }
 
                 delay(BATCH_DELAY_MS)
@@ -72,6 +72,36 @@ class SyncProcessorWorker(
             } else {
                 Result.failure()
             }
+        }
+    }
+
+    /**
+     * Process pending sync tasks from the queue.
+     * Picks up pending tasks and enqueues upload/download workers for them.
+     *
+     * @param maxTasks Maximum number of tasks to process
+     * @return Number of tasks successfully enqueued, or -1 on error
+     */
+    private suspend fun processSyncQueue(maxTasks: Int): Int {
+        return try {
+            val tasks = syncTaskRepository.getPendingTasks(limit = maxTasks)
+
+            var successCount = 0
+            tasks.forEach { task ->
+                try {
+                    val workerId = syncTaskEnqueuer.enqueueTask(task)
+                    syncTaskRepository.markTaskStartedWithWorker(task.id, workerId.toString())
+                    successCount++
+                    Log.d(TAG, "Enqueued ${task.syncType} worker for: ${task.fileName}")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error enqueueing task ${task.id}: ${e.message}", e)
+                    syncTaskRepository.markTaskFailed(task.id, e.message ?: "Enqueue failed")
+                }
+            }
+            successCount
+        } catch (e: Exception) {
+            Log.e(TAG, "processSyncQueue failed: ${e.message}", e)
+            -1
         }
     }
 
