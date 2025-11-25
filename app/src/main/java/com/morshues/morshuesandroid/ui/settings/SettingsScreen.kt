@@ -156,6 +156,55 @@ fun SettingsScreen(
                     onAction(SettingsAction.SyncNetwork.SetNetworkType(SettingsManager.NETWORK_TYPE_ANY))
                 }
             )
+
+            // Sync Mode Section
+            Text(
+                text = "Sync Mode",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
+            )
+            Text(
+                text = "Choose which sync operations are allowed",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            SyncModeItem(
+                label = "Full Sync",
+                description = "Upload and download files",
+                isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_FULL,
+                onSelect = {
+                    onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_FULL))
+                }
+            )
+
+            SyncModeItem(
+                label = "Download Only",
+                description = "Only download files from server",
+                isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_DOWNLOAD_ONLY,
+                onSelect = {
+                    onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_DOWNLOAD_ONLY))
+                }
+            )
+
+            SyncModeItem(
+                label = "Upload Only",
+                description = "Only upload files to server",
+                isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_UPLOAD_ONLY,
+                onSelect = {
+                    onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_UPLOAD_ONLY))
+                }
+            )
+
+            SyncModeItem(
+                label = "Disabled",
+                description = "Stop all syncing operations",
+                isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_DISABLED,
+                onSelect = {
+                    onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_DISABLED))
+                }
+            )
         }
     }
 
@@ -229,6 +278,50 @@ fun RootUrlItem(
 
 @Composable
 fun NetworkTypeItem(
+    label: String,
+    description: String,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onSelect() }
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            RadioButton(
+                selected = isSelected,
+                onClick = onSelect,
+                modifier = Modifier.size(24.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .weight(1f)
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SyncModeItem(
     label: String,
     description: String,
     isSelected: Boolean,

@@ -61,6 +61,7 @@ class SyncTaskEnqueuer(
                     .setRequiredNetworkType(getNetworkType())
                     .build()
             )
+            .addTag(TAG_PREFIX_UPLOAD)
             .addTag("$TAG_PREFIX_UPLOAD${task.folderPath}")
             .addTag("$TAG_PREFIX_TASK${task.id}")
             .build()
@@ -83,6 +84,7 @@ class SyncTaskEnqueuer(
                     .setRequiredNetworkType(getNetworkType())
                     .build()
             )
+            .addTag(TAG_PREFIX_DOWNLOAD)
             .addTag("$TAG_PREFIX_DOWNLOAD${task.folderPath}")
             .addTag("$TAG_PREFIX_TASK${task.id}")
             .build()
@@ -94,6 +96,14 @@ class SyncTaskEnqueuer(
     fun cancelWorkersByFolder(folderPath: String) {
         workManager.cancelAllWorkByTag("$TAG_PREFIX_UPLOAD$folderPath")
         workManager.cancelAllWorkByTag("$TAG_PREFIX_DOWNLOAD$folderPath")
+    }
+
+    fun cancelAllUploadWorkers() {
+        workManager.cancelAllWorkByTag(TAG_PREFIX_UPLOAD)
+    }
+
+    fun cancelAllDownloadWorkers() {
+        workManager.cancelAllWorkByTag(TAG_PREFIX_DOWNLOAD)
     }
 
     companion object {

@@ -3,6 +3,7 @@ package com.morshues.morshuesandroid.data.repository
 import com.morshues.morshuesandroid.data.db.dao.SyncTaskDao
 import com.morshues.morshuesandroid.data.db.entity.SyncStatus
 import com.morshues.morshuesandroid.data.db.entity.SyncTask
+import com.morshues.morshuesandroid.data.db.entity.SyncType
 import kotlinx.coroutines.flow.Flow
 
 class SyncTaskRepository(private val syncTaskDao: SyncTaskDao) {
@@ -46,6 +47,10 @@ class SyncTaskRepository(private val syncTaskDao: SyncTaskDao) {
 
     suspend fun markTaskFailed(taskId: Long, errorMessage: String) {
         syncTaskDao.markTaskFailed(taskId, errorMessage = errorMessage)
+    }
+
+    suspend fun deleteTasksBySyncType(syncType: SyncType) {
+        syncTaskDao.deleteTasksBySyncType(syncType)
     }
 
     suspend fun deleteTasksByFolder(folderPath: String) {

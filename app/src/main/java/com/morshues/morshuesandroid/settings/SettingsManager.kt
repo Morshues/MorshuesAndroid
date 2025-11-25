@@ -66,6 +66,18 @@ class SettingsManager(private val context: Context) {
         }
     }
 
+    fun getSyncMode(): Flow<String> {
+        return context.dataStore.data.map { preferences ->
+            preferences[SYNC_MODE_KEY] ?: DEFAULT_SYNC_MODE
+        }
+    }
+
+    suspend fun setSyncMode(syncMode: String) {
+        context.dataStore.edit { preferences ->
+            preferences[SYNC_MODE_KEY] = syncMode
+        }
+    }
+
     companion object {
         const val DEFAULT_SERVER_PATH = "http://10.0.2.2:3000/"
         private val DEFAULT_ROOT_URL_SET = setOf(DEFAULT_SERVER_PATH)
@@ -76,5 +88,12 @@ class SettingsManager(private val context: Context) {
         const val NETWORK_TYPE_WIFI_ONLY = "WIFI_ONLY"
         const val NETWORK_TYPE_ANY = "ANY"
         private val SYNC_NETWORK_TYPE_KEY = stringPreferencesKey("sync_network_type")
+
+        const val DEFAULT_SYNC_MODE = "FULL"
+        const val SYNC_MODE_FULL = "FULL"
+        const val SYNC_MODE_DOWNLOAD_ONLY = "DOWNLOAD_ONLY"
+        const val SYNC_MODE_UPLOAD_ONLY = "UPLOAD_ONLY"
+        const val SYNC_MODE_DISABLED = "DISABLED"
+        private val SYNC_MODE_KEY = stringPreferencesKey("sync_mode")
     }
 }

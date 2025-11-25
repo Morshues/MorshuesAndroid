@@ -8,7 +8,9 @@ import com.morshues.morshuesandroid.data.model.FileItem
 import com.morshues.morshuesandroid.data.repository.LocalFileRepository
 import com.morshues.morshuesandroid.data.repository.RemoteFileRepository
 import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
+import com.morshues.morshuesandroid.settings.SettingsManager
 import com.morshues.morshuesandroid.utils.MediaFileHelper
+import kotlinx.coroutines.flow.first
 import java.io.File
 
 /**
@@ -19,6 +21,7 @@ class SyncFolderUseCase(
     private val localFileRepository: LocalFileRepository,
     private val remoteFileRepository: RemoteFileRepository,
     private val syncTaskRepository: SyncTaskRepository,
+    private val settingsManager: SettingsManager,
 ) {
 
     /**
@@ -37,6 +40,12 @@ class SyncFolderUseCase(
     }
 
     private suspend fun scanAndCreateTasks(folderPath: String): Int {
+        val syncMode = settingsManager.getSyncMode().first()
+
+        if (syncMode == SettingsManager.SYNC_MODE_DISABLED) {
+            return 0
+        }
+
         val localFiles = localFileRepository.listFiles(folderPath)
             .filterIsInstance<FileItem>()
 
@@ -52,31 +61,39 @@ class SyncFolderUseCase(
         )
 
         val tasksToCreate = mutableListOf<SyncTask>()
-        remoteCompareResult.download
-            .filter { MediaFileHelper.isMediaFile(it.name) }
-            .forEach { fileEntry ->
+
+        if (syncMode == SettingsManager.SYNC_MODE_FULL ||
+            syncMode == SettingsManager.SYNC_MODE_DOWNLOAD_ONLY) {
+            remoteCompareResult.download
+                .filter { MediaFileHelper.isMediaFile(it.name) }
+                .forEach { fileEntry ->
+                    tasksToCreate.add(
+                        SyncTask(
+                            folderPath = folderPath,
+                            fileName = fileEntry.name,
+                            filePath = File(folderPath, fileEntry.name).path,
+                            syncType = SyncType.DOWNLOAD,
+                            status = SyncStatus.PENDING,
+                            fileSize = fileEntry.size
+                        )
+                    )
+                }
+        }
+
+        if (syncMode == SettingsManager.SYNC_MODE_FULL ||
+            syncMode == SettingsManager.SYNC_MODE_UPLOAD_ONLY) {
+            remoteCompareResult.upload.forEach { fileEntry ->
                 tasksToCreate.add(
                     SyncTask(
                         folderPath = folderPath,
                         fileName = fileEntry.name,
                         filePath = File(folderPath, fileEntry.name).path,
-                        syncType = SyncType.DOWNLOAD,
+                        syncType = SyncType.UPLOAD,
                         status = SyncStatus.PENDING,
                         fileSize = fileEntry.size
                     )
                 )
             }
-        remoteCompareResult.upload.forEach { fileEntry ->
-            tasksToCreate.add(
-                SyncTask(
-                    folderPath = folderPath,
-                    fileName = fileEntry.name,
-                    filePath = File(folderPath, fileEntry.name).path,
-                    syncType = SyncType.UPLOAD,
-                    status = SyncStatus.PENDING,
-                    fileSize = fileEntry.size
-                )
-            )
         }
 
         if (tasksToCreate.isNotEmpty()) {

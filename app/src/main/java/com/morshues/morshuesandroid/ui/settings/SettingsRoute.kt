@@ -11,7 +11,13 @@ import com.morshues.morshuesandroid.di.AppModule
 fun SettingsRoute(
     navController: NavController
 ) {
-    val factory = SettingsViewModelFactory(AppModule.settingsManager)
+    val factory = SettingsViewModelFactory(
+        AppModule.settingsManager,
+        AppModule.syncTaskRepository,
+        AppModule.syncingFolderRepository,
+        AppModule.syncTaskEnqueuer,
+        AppModule.syncFolderUseCase
+    )
     val viewModel: SettingsViewModel = viewModel(factory = factory)
     val uiState by viewModel.uiState.collectAsState()
 

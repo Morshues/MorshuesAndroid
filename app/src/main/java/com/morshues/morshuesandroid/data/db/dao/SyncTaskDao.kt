@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.morshues.morshuesandroid.data.db.entity.SyncStatus
 import com.morshues.morshuesandroid.data.db.entity.SyncTask
+import com.morshues.morshuesandroid.data.db.entity.SyncType
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -44,6 +45,9 @@ interface SyncTaskDao {
 
     @Query("DELETE FROM sync_tasks WHERE status = :status")
     suspend fun deleteTasksByStatus(status: SyncStatus)
+
+    @Query("DELETE FROM sync_tasks WHERE syncType = :syncType")
+    suspend fun deleteTasksBySyncType(syncType: SyncType)
 
     @Query("DELETE FROM sync_tasks WHERE folderPath = :folderPath")
     suspend fun deleteTasksByFolder(folderPath: String)

@@ -65,7 +65,7 @@ object AppModule {
     }
 
     val syncFolderUseCase: SyncFolderUseCase by lazy {
-        SyncFolderUseCase(localFileRepository, remoteFileRepository, syncTaskRepository)
+        SyncFolderUseCase(localFileRepository, remoteFileRepository, syncTaskRepository, settingsManager)
     }
 
     val workManager: WorkManager by lazy {
