@@ -9,6 +9,7 @@ import com.morshues.morshuesandroid.utils.JwtUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -31,6 +32,18 @@ class LoginViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(LoginUiState())
     val state: StateFlow<LoginUiState> = _state.asStateFlow()
+
+    init {
+        loadCachedCredentials()
+    }
+
+    private fun loadCachedCredentials() {
+        viewModelScope.launch {
+            val email = sessionStore.cachedEmail.first() ?: ""
+            val password = sessionStore.cachedPassword.first() ?: ""
+            _state.update { it.copy(email = email, password = password) }
+        }
+    }
 
     fun onEmailChange(v: String) {
         _state.update { it.copy(email = v, loginOpState = LoginOpState.Idle) }
@@ -55,6 +68,7 @@ class LoginViewModel(
                 val expiresAt = JwtUtils.getExpirationTime(res.accessToken)
                 sessionStore.saveTokens(res.accessToken, res.refreshToken, expiresAt)
                 sessionStore.saveUser(res.user)
+                sessionStore.saveLoginCredentials(email, password)
                 _state.update { it.copy(loginOpState = LoginOpState.Success(res.user)) }
             } catch (e: Exception) {
                 val errorMessage = e.message ?: "Login failed"

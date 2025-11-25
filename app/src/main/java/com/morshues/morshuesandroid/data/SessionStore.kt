@@ -22,6 +22,8 @@ class SessionStore(private val context: Context) {
     val user: Flow<UserDto?> = context.dataStore.data.map { prefs ->
         prefs[KEY_USER]?.let { Json.decodeFromString<UserDto>(it) }
     }
+    val cachedEmail: Flow<String?> = context.dataStore.data.map { it[KEY_CACHED_EMAIL] }
+    val cachedPassword: Flow<String?> = context.dataStore.data.map { it[KEY_CACHED_PASSWORD] }
 
     suspend fun getOrCreateDeviceId(): String {
         val existingId = context.dataStore.data.map { it[KEY_DEVICE_ID] }.first()
@@ -53,6 +55,13 @@ class SessionStore(private val context: Context) {
         }
     }
 
+    suspend fun saveLoginCredentials(email: String, password: String) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_CACHED_EMAIL] = email
+            prefs[KEY_CACHED_PASSWORD] = password
+        }
+    }
+
     suspend fun clear() {
         context.dataStore.edit { it.clear() }
     }
@@ -63,5 +72,7 @@ class SessionStore(private val context: Context) {
         private val KEY_TOKEN_EXPIRES_AT = longPreferencesKey("token_expires_at")
         private val KEY_USER = stringPreferencesKey("user")
         private val KEY_DEVICE_ID = stringPreferencesKey("device_id")
+        private val KEY_CACHED_EMAIL = stringPreferencesKey("cached_email")
+        private val KEY_CACHED_PASSWORD = stringPreferencesKey("cached_password")
     }
 }
