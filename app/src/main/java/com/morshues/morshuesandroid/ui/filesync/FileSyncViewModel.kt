@@ -16,6 +16,7 @@ import com.morshues.morshuesandroid.data.model.toStorageItem
 import com.morshues.morshuesandroid.data.repository.LocalFileRepository
 import com.morshues.morshuesandroid.data.repository.RemoteFileRepository
 import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
+import com.morshues.morshuesandroid.data.db.entity.SyncType
 import com.morshues.morshuesandroid.data.repository.SyncingFolderRepository
 import com.morshues.morshuesandroid.data.sync.SyncTaskEnqueuer
 import com.morshues.morshuesandroid.data.worker.SyncProcessorWorker
@@ -87,6 +88,29 @@ class FileSyncViewModel(
             .distinctUntilChanged()
             .onEach { count ->
                 _uiState.update { it.copy(syncPendingCount = count) }
+            }
+            .launchIn(viewModelScope)
+
+        syncTaskRepository.getCompletedTasks()
+            .distinctUntilChanged()
+            .onEach { completedTasks ->
+                if (_uiState.value.currentFolder?.path !in _uiState.value.syncingFolderPaths) {
+                    return@onEach
+                }
+
+                val tasksForCurrentFolder = completedTasks
+                    .filter { it.folderPath == _uiState.value.currentFolder?.path }
+                if (tasksForCurrentFolder.isEmpty()) {
+                    return@onEach
+                }
+
+                _uiState.update { state ->
+                    val updatedRemoteFiles = state.currentFolderRemoteFilesSet.toMutableSet()
+                    tasksForCurrentFolder
+                        .filter { it.syncType == SyncType.UPLOAD }
+                        .forEach { it -> updatedRemoteFiles.add(it.fileName) }
+                    state.copy(currentFolderRemoteFilesSet = updatedRemoteFiles)
+                }
             }
             .launchIn(viewModelScope)
     }

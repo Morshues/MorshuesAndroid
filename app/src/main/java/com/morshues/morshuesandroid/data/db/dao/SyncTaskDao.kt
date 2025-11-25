@@ -29,6 +29,9 @@ interface SyncTaskDao {
     @Query("SELECT COUNT(*) FROM sync_tasks WHERE status = :status")
     fun getTaskCountByStatus(status: SyncStatus): Flow<Int>
 
+    @Query("SELECT * FROM sync_tasks WHERE status = :status ORDER BY completedAt DESC")
+    fun getTasksByStatus(status: SyncStatus): Flow<List<SyncTask>>
+
     // Update tasks
     @Query("UPDATE sync_tasks SET status = :status, startedAt = :startedAt, workRequestId = :workerId WHERE id = :taskId")
     suspend fun markTaskStartedWithWorker(taskId: Long, workerId: String, status: SyncStatus = SyncStatus.IN_PROGRESS, startedAt: Long = System.currentTimeMillis())

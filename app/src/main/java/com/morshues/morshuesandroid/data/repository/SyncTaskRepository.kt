@@ -37,6 +37,10 @@ class SyncTaskRepository(private val syncTaskDao: SyncTaskDao) {
         return syncTaskDao.getTaskCountByStatus(SyncStatus.PENDING)
     }
 
+    fun getCompletedTasks(): Flow<List<SyncTask>> {
+        return syncTaskDao.getTasksByStatus(SyncStatus.COMPLETED)
+    }
+
     suspend fun markTaskStartedWithWorker(taskId: Long, workerId: String) {
         syncTaskDao.markTaskStartedWithWorker(taskId, workerId)
     }
