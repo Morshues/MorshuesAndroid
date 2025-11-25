@@ -1,5 +1,9 @@
 package com.morshues.morshuesandroid.ui.settings
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,8 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -29,6 +33,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -53,6 +58,10 @@ fun SettingsScreen(
 
     var showAddUrlDialog by rememberSaveable { mutableStateOf(false) }
     var urlToDelete by rememberSaveable { mutableStateOf<String?>(null) }
+
+    var rootUrlExpanded by rememberSaveable { mutableStateOf(true) }
+    var syncNetworkExpanded by rememberSaveable { mutableStateOf(true) }
+    var syncModeExpanded by rememberSaveable { mutableStateOf(true) }
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { message ->
@@ -82,129 +91,118 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Root URL",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                IconButton(onClick = { showAddUrlDialog = true }) {
-                    Icon(
-                        painter = painterResource(R.drawable.round_add_24),
-                        contentDescription = "Add URL",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            if (uiState.rootUrlList.isEmpty()) {
-                Text(
-                    text = "No URLs configured. Tap + to add one.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(16.dp)
-                )
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(uiState.rootUrlList) { url ->
-                        RootUrlItem(
-                            url = url,
-                            isSelected = url == uiState.currentServerPath,
-                            onSelect = { onAction(SettingsAction.ServerUrl.Select(url)) },
-                            onDelete = { urlToDelete = url }
+            // Root URL Section
+            CollapsibleSection(
+                title = "Root URL",
+                expanded = rootUrlExpanded,
+                onToggle = { rootUrlExpanded = !rootUrlExpanded },
+                trailingIcon = {
+                    IconButton(onClick = { showAddUrlDialog = true }) {
+                        Icon(
+                            painter = painterResource(R.drawable.round_add_24),
+                            contentDescription = "Add URL",
+                            tint = MaterialTheme.colorScheme.primary
                         )
+                    }
+                }
+            ) {
+                if (uiState.rootUrlList.isEmpty()) {
+                    Text(
+                        text = "No URLs configured. Tap + to add one.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                } else {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        uiState.rootUrlList.forEach { url ->
+                            RootUrlItem(
+                                url = url,
+                                isSelected = url == uiState.currentServerPath,
+                                onSelect = { onAction(SettingsAction.ServerUrl.Select(url)) },
+                                onDelete = { urlToDelete = url }
+                            )
+                        }
                     }
                 }
             }
 
             // Network Type Section
-            Text(
-                text = "Sync Network",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
-            )
-            Text(
-                text = "Control when files can be uploaded and downloaded",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            CollapsibleSection(
+                title = "Sync Network",
+                expanded = syncNetworkExpanded,
+                onToggle = { syncNetworkExpanded = !syncNetworkExpanded },
+                description = "Control when files can be uploaded and downloaded",
+                modifier = Modifier.padding(top = 24.dp)
+            ) {
+                NetworkTypeItem(
+                    label = "WiFi Only",
+                    description = "Sync only when connected to WiFi",
+                    isSelected = uiState.syncNetworkType == SettingsManager.NETWORK_TYPE_WIFI_ONLY,
+                    onSelect = {
+                        onAction(SettingsAction.SyncNetwork.SetNetworkType(SettingsManager.NETWORK_TYPE_WIFI_ONLY))
+                    }
+                )
 
-            NetworkTypeItem(
-                label = "WiFi Only",
-                description = "Sync only when connected to WiFi",
-                isSelected = uiState.syncNetworkType == SettingsManager.NETWORK_TYPE_WIFI_ONLY,
-                onSelect = {
-                    onAction(SettingsAction.SyncNetwork.SetNetworkType(SettingsManager.NETWORK_TYPE_WIFI_ONLY))
-                }
-            )
-
-            NetworkTypeItem(
-                label = "WiFi or Mobile Data",
-                description = "Sync on any network connection (may use mobile data)",
-                isSelected = uiState.syncNetworkType == SettingsManager.NETWORK_TYPE_ANY,
-                onSelect = {
-                    onAction(SettingsAction.SyncNetwork.SetNetworkType(SettingsManager.NETWORK_TYPE_ANY))
-                }
-            )
+                NetworkTypeItem(
+                    label = "WiFi or Mobile Data",
+                    description = "Sync on any network connection (may use mobile data)",
+                    isSelected = uiState.syncNetworkType == SettingsManager.NETWORK_TYPE_ANY,
+                    onSelect = {
+                        onAction(SettingsAction.SyncNetwork.SetNetworkType(SettingsManager.NETWORK_TYPE_ANY))
+                    }
+                )
+            }
 
             // Sync Mode Section
-            Text(
-                text = "Sync Mode",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
-            )
-            Text(
-                text = "Choose which sync operations are allowed",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            CollapsibleSection(
+                title = "Sync Mode",
+                expanded = syncModeExpanded,
+                onToggle = { syncModeExpanded = !syncModeExpanded },
+                description = "Choose which sync operations are allowed",
+                modifier = Modifier.padding(top = 24.dp)
+            ) {
+                SyncModeItem(
+                    label = "Full Sync",
+                    description = "Upload and download files",
+                    isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_FULL,
+                    onSelect = {
+                        onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_FULL))
+                    }
+                )
 
-            SyncModeItem(
-                label = "Full Sync",
-                description = "Upload and download files",
-                isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_FULL,
-                onSelect = {
-                    onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_FULL))
-                }
-            )
+                SyncModeItem(
+                    label = "Download Only",
+                    description = "Only download files from server",
+                    isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_DOWNLOAD_ONLY,
+                    onSelect = {
+                        onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_DOWNLOAD_ONLY))
+                    }
+                )
 
-            SyncModeItem(
-                label = "Download Only",
-                description = "Only download files from server",
-                isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_DOWNLOAD_ONLY,
-                onSelect = {
-                    onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_DOWNLOAD_ONLY))
-                }
-            )
+                SyncModeItem(
+                    label = "Upload Only",
+                    description = "Only upload files to server",
+                    isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_UPLOAD_ONLY,
+                    onSelect = {
+                        onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_UPLOAD_ONLY))
+                    }
+                )
 
-            SyncModeItem(
-                label = "Upload Only",
-                description = "Only upload files to server",
-                isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_UPLOAD_ONLY,
-                onSelect = {
-                    onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_UPLOAD_ONLY))
-                }
-            )
-
-            SyncModeItem(
-                label = "Disabled",
-                description = "Stop all syncing operations",
-                isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_DISABLED,
-                onSelect = {
-                    onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_DISABLED))
-                }
-            )
+                SyncModeItem(
+                    label = "Disabled",
+                    description = "Stop all syncing operations",
+                    isSelected = uiState.syncMode == SettingsManager.SYNC_MODE_DISABLED,
+                    onSelect = {
+                        onAction(SettingsAction.SyncMode.SetMode(SettingsManager.SYNC_MODE_DISABLED))
+                    }
+                )
+            }
         }
     }
 
@@ -231,6 +229,75 @@ fun SettingsScreen(
             },
             onDismiss = { urlToDelete = null }
         )
+    }
+}
+
+@Composable
+fun CollapsibleSection(
+    title: String,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    description: String? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onToggle() }
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge
+                )
+                description?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                trailingIcon?.invoke()
+
+                val rotation by animateFloatAsState(
+                    targetValue = if (expanded) 180f else 0f,
+                    label = "expand_icon_rotation"
+                )
+                Icon(
+                    painter = painterResource(R.drawable.round_keyboard_arrow_down_24),
+                    contentDescription = if (expanded) "Collapse" else "Expand",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .rotate(rotation)
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            Column(
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                content()
+            }
+        }
     }
 }
 
