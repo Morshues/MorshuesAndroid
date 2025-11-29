@@ -6,6 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.morshues.morshuesandroid.data.repository.RemoteFileRepository
 import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
+import java.io.File
 
 class FileUploadWorker(
     context: Context,
@@ -18,6 +19,12 @@ class FileUploadWorker(
         val taskId = inputData.getLong(KEY_TASK_ID, -1L)
         val folderPath = inputData.getString(KEY_FOLDER_PATH) ?: return Result.failure()
         val filePath = inputData.getString(KEY_FILE_PATH) ?: return Result.failure()
+
+        if (!File(filePath).exists()) {
+            Log.d(TAG, "Uploading file not exists: $filePath")
+            syncTaskRepository.markTaskFailed(taskId, "Uploading file not exists")
+            return Result.failure()
+        }
 
         return try {
             Log.d(TAG, "Uploading file: $filePath")
