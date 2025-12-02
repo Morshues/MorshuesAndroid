@@ -2,6 +2,8 @@ package com.morshues.morshuesandroid.data.repository
 
 import android.content.Context
 import android.media.MediaScannerConnection
+import com.morshues.morshuesandroid.data.model.FileItem
+import com.morshues.morshuesandroid.data.model.FolderItem
 import com.morshues.morshuesandroid.data.model.StorageItem
 import com.morshues.morshuesandroid.data.model.RemoteFileResult
 import com.morshues.morshuesandroid.data.model.toStorageItem
@@ -21,7 +23,23 @@ class LocalFileRepository(
                 !it.name.startsWith(".")
             }?.map {
                 it.toStorageItem()
-            } ?: emptyList()
+            }?.sortedWith(
+                compareBy(
+                    { item ->
+                        when (item) {
+                            is FolderItem -> 0
+                            is FileItem -> 1
+                        }
+                    },
+                    { it.name },
+                    { item ->
+                        when (item) {
+                            is FileItem -> item.lastModified
+                            is FolderItem -> Long.MAX_VALUE
+                        }
+                    }
+                )
+            ) ?: emptyList()
     }
 
     suspend fun writeFile(
