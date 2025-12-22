@@ -42,6 +42,9 @@ interface SyncTaskDao {
     @Query("UPDATE sync_tasks SET status = :status, errorMessage = :errorMessage WHERE id = :taskId")
     suspend fun markTaskFailed(taskId: Long, status: SyncStatus = SyncStatus.FAILED, errorMessage: String)
 
+    @Query("UPDATE sync_tasks SET status = :nextStatus WHERE status = :prevStatus")
+    fun resetActiveTasks(prevStatus: SyncStatus = SyncStatus.IN_PROGRESS, nextStatus: SyncStatus = SyncStatus.PENDING)
+
     // Delete tasks
     @Delete
     suspend fun deleteTask(task: SyncTask)

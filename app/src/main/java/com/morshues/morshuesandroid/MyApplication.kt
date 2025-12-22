@@ -9,11 +9,18 @@ import coil3.video.VideoFrameDecoder
 import com.morshues.morshuesandroid.data.sync.PeriodicSyncScheduler
 import com.morshues.morshuesandroid.data.worker.AppWorkerFactory
 import com.morshues.morshuesandroid.di.AppModule
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MyApplication : Application(), SingletonImageLoader.Factory, Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         AppModule.init(this)
+        CoroutineScope(Dispatchers.IO).launch {
+            AppModule.syncTaskRepository.resetActiveTasks()
+        }
+
         PeriodicSyncScheduler.init(this)
     }
 

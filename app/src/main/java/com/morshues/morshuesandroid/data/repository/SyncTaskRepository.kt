@@ -61,6 +61,10 @@ class SyncTaskRepository(private val syncTaskDao: SyncTaskDao) {
         syncTaskDao.deleteTasksByFolder(folderPath)
     }
 
+    fun resetActiveTasks() {
+        syncTaskDao.resetActiveTasks()
+    }
+
     suspend fun clearCompletedTasks() {
         syncTaskDao.deleteTasksByStatus(SyncStatus.COMPLETED)
     }
