@@ -29,7 +29,7 @@ object NetworkModule {
             addInterceptor(DynamicUrlInterceptor(settingsManager))
             if (BuildConfig.DEBUG) {
                 addInterceptor(HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BODY
+                    level = HttpLoggingInterceptor.Level.BASIC
                 })
             }
         }.build()
@@ -50,7 +50,7 @@ object NetworkModule {
             authenticator(TokenAuthenticator(sessionStore, authRepository))
             if (BuildConfig.DEBUG) {
                 addInterceptor(HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BODY
+                    level = HttpLoggingInterceptor.Level.BASIC
                 })
             }
         }.build()
