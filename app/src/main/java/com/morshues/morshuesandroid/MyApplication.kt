@@ -1,27 +1,40 @@
 package com.morshues.morshuesandroid
 
 import android.app.Application
+import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.video.VideoFrameDecoder
+import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
 import com.morshues.morshuesandroid.data.sync.PeriodicSyncScheduler
-import com.morshues.morshuesandroid.data.worker.AppWorkerFactory
-import com.morshues.morshuesandroid.di.AppModule
+import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@HiltAndroidApp
 class MyApplication : Application(), SingletonImageLoader.Factory, Configuration.Provider {
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    @Inject
+    lateinit var periodicSyncScheduler: PeriodicSyncScheduler
+
+    @Inject
+    lateinit var syncTaskRepository: SyncTaskRepository
+
     override fun onCreate() {
         super.onCreate()
-        AppModule.init(this)
+
         CoroutineScope(Dispatchers.IO).launch {
-            AppModule.syncTaskRepository.resetActiveTasks()
+            syncTaskRepository.resetActiveTasks()
         }
 
-        PeriodicSyncScheduler.init(this)
+        periodicSyncScheduler.scheduleAll()
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
@@ -34,16 +47,6 @@ class MyApplication : Application(), SingletonImageLoader.Factory, Configuration
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
-            .setWorkerFactory(
-                AppWorkerFactory(
-                    syncingFolderRepository = AppModule.syncingFolderRepository,
-                    remoteFileRepository = AppModule.remoteFileRepository,
-                    localFileRepository = AppModule.localFileRepository,
-                    syncTaskRepository = AppModule.syncTaskRepository,
-                    syncFolderUseCase = AppModule.syncFolderUseCase,
-                    // Use provider function to break circular dependency
-                    syncTaskEnqueuerProvider = { AppModule.syncTaskEnqueuer },
-                )
-            )
+            .setWorkerFactory(workerFactory)
             .build()
 }

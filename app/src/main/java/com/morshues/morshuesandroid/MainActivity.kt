@@ -14,23 +14,21 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.morshues.morshuesandroid.di.AppModule
 import com.morshues.morshuesandroid.ui.AppDestinations
 import com.morshues.morshuesandroid.ui.login.LoginRoute
 import com.morshues.morshuesandroid.ui.main.MainViewModel
-import com.morshues.morshuesandroid.ui.main.MainViewModelFactory
 import com.morshues.morshuesandroid.ui.theme.MainAndroidTheme
 import com.morshues.morshuesandroid.ui.userprofile.UserProfileRoute
+import dagger.hilt.android.AndroidEntryPoint
 
 import androidx.activity.enableEdgeToEdge
 import com.morshues.morshuesandroid.ui.filesync.FileSyncRoute
 import com.morshues.morshuesandroid.ui.settings.SettingsRoute
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val mainViewModel: MainViewModel by viewModels {
-        MainViewModelFactory(AppModule.sessionStore, AppModule.authRepository)
-    }
+    private val mainViewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

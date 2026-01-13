@@ -1,4 +1,4 @@
-package com.morshues.morshuesandroid.di
+package com.morshues.morshuesandroid.di.hilt
 
 import com.morshues.morshuesandroid.BuildConfig
 import com.morshues.morshuesandroid.data.SessionStore
@@ -9,22 +9,43 @@ import com.morshues.morshuesandroid.data.network.TokenAuthenticator
 import com.morshues.morshuesandroid.data.network.TokenInterceptor
 import com.morshues.morshuesandroid.data.repository.AuthRepository
 import com.morshues.morshuesandroid.settings.SettingsManager
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Qualifier
+import javax.inject.Singleton
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AuthClient
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ProtectedClient
 
 /**
- * Dependency injection module for network-related components.
- * Manages OkHttpClients and Retrofit API services.
+ * Hilt module for network-related components.
+ * Provides OkHttpClients and Retrofit API services.
  */
-object NetworkModule {
+@Module
+@InstallIn(SingletonComponent::class)
+object HiltNetworkModule {
 
     /**
      * OkHttpClient for non-authenticated endpoints (login, refresh).
      * Does NOT include TokenAuthenticator to avoid circular dependency.
      */
-    private fun createAuthOkHttpClient(settingsManager: SettingsManager): OkHttpClient {
+    @Provides
+    @Singleton
+    @AuthClient
+    fun provideAuthOkHttpClient(
+        settingsManager: SettingsManager
+    ): OkHttpClient {
         return OkHttpClient.Builder().apply {
             addInterceptor(DynamicUrlInterceptor(settingsManager))
             if (BuildConfig.DEBUG) {
@@ -39,7 +60,10 @@ object NetworkModule {
      * OkHttpClient for protected endpoints with automatic token refresh.
      * Includes TokenAuthenticator which uses authRepository.
      */
-    private fun createProtectedOkHttpClient(
+    @Provides
+    @Singleton
+    @ProtectedClient
+    fun provideProtectedOkHttpClient(
         settingsManager: SettingsManager,
         sessionStore: SessionStore,
         authRepository: AuthRepository
@@ -60,11 +84,14 @@ object NetworkModule {
      * Creates API service for authentication endpoints (login, refresh).
      * Uses a client WITHOUT TokenAuthenticator to avoid circular dependency.
      */
-    fun createAuthApiService(settingsManager: SettingsManager): AuthApiService {
-        val client = createAuthOkHttpClient(settingsManager)
+    @Provides
+    @Singleton
+    fun provideAuthApiService(
+        @AuthClient okHttpClient: OkHttpClient
+    ): AuthApiService {
         return Retrofit.Builder()
             .baseUrl(SettingsManager.DEFAULT_SERVER_PATH)
-            .client(client)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(AuthApiService::class.java)
@@ -74,15 +101,14 @@ object NetworkModule {
      * Creates API service for protected endpoints (file operations, etc.).
      * Uses a client WITH TokenAuthenticator for automatic token refresh.
      */
-    fun createApiService(
-        settingsManager: SettingsManager,
-        sessionStore: SessionStore,
-        authRepository: AuthRepository
+    @Provides
+    @Singleton
+    fun provideApiService(
+        @ProtectedClient okHttpClient: OkHttpClient
     ): ApiService {
-        val client = createProtectedOkHttpClient(settingsManager, sessionStore, authRepository)
         return Retrofit.Builder()
             .baseUrl(SettingsManager.DEFAULT_SERVER_PATH)
-            .client(client)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)

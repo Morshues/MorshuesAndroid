@@ -3,22 +3,14 @@ package com.morshues.morshuesandroid.ui.settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.morshues.morshuesandroid.di.AppModule
 
 @Composable
 fun SettingsRoute(
     navController: NavController
 ) {
-    val factory = SettingsViewModelFactory(
-        AppModule.settingsManager,
-        AppModule.syncTaskRepository,
-        AppModule.syncingFolderRepository,
-        AppModule.syncTaskEnqueuer,
-        AppModule.syncFolderUseCase
-    )
-    val viewModel: SettingsViewModel = viewModel(factory = factory)
+    val viewModel: SettingsViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsState()
 
     SettingsScreen(

@@ -2,16 +2,20 @@ package com.morshues.morshuesandroid.data.worker
 
 import android.content.Context
 import android.util.Log
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.morshues.morshuesandroid.data.repository.LocalFileRepository
 import com.morshues.morshuesandroid.data.repository.RemoteFileRepository
 import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import java.io.File
 
-class FileDownloadWorker(
-    context: Context,
-    params: WorkerParameters,
+@HiltWorker
+class FileDownloadWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
     private val remoteFileRepository: RemoteFileRepository,
     private val localFileRepository: LocalFileRepository,
     private val syncTaskRepository: SyncTaskRepository,

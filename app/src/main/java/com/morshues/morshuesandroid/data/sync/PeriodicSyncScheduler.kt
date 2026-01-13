@@ -11,7 +11,10 @@ import androidx.work.workDataOf
 import com.morshues.morshuesandroid.data.worker.CleanupCompletedTasksWorker
 import com.morshues.morshuesandroid.data.worker.FolderScanWorker
 import com.morshues.morshuesandroid.data.worker.SyncProcessorWorker
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * PeriodicSyncScheduler manages the scheduling of periodic sync operations.
@@ -20,41 +23,29 @@ import java.util.concurrent.TimeUnit
  * 2. SyncProcessorWorker - Processes pending sync tasks
  * 3. CleanupCompletedTasksWorker - Cleans up completed tasks daily
  */
-object PeriodicSyncScheduler {
-
-    private const val TAG = "PeriodicSyncScheduler"
-
-    private const val FOLDER_SCAN_INTERVAL_MINUTES = 30L
-    private const val PROCESSOR_INTERVAL_MINUTES = 15L
-    private const val CLEANUP_INTERVAL_HOURS = 24L
-    private const val MAX_CONCURRENT = 3
-
-    private const val WORKER_TAG_PERIODIC_SYNC = "periodic_sync"
-    private const val WORKER_TAG_FOLDER_SCAN = "folder_scan"
-    private const val WORKER_TAG_PROCESSOR = "processor"
-    private const val WORKER_TAG_CLEANUP = "cleanup"
-
+@Singleton
+class PeriodicSyncScheduler @Inject constructor(
+    @param:ApplicationContext private val context: Context
+) {
 
     /**
      * Initialize periodic sync with default settings.
      * This should be called when the app starts (e.g., in Application.onCreate()).
      */
-    fun init(context: Context) {
+    fun scheduleAll() {
         Log.d(TAG, "Initializing periodic sync")
-        scheduleFolderScan(context)
-        scheduleProcessor(context)
-        scheduleCleanup(context)
+        scheduleFolderScan()
+        scheduleProcessor()
+        scheduleCleanup()
     }
 
     /**
      * Schedule the FolderScanWorker to run periodically.
      * This worker scans all syncing folders and creates sync tasks.
      *
-     * @param context Application context
      * @param intervalMinutes How often to run (minimum 15 minutes)
      */
     private fun scheduleFolderScan(
-        context: Context,
         intervalMinutes: Long = FOLDER_SCAN_INTERVAL_MINUTES
     ) {
         val constraints = Constraints.Builder()
@@ -83,12 +74,10 @@ object PeriodicSyncScheduler {
      * Schedule the SyncProcessorWorker to run periodically.
      * This worker processes pending tasks from the database.
      *
-     * @param context Application context
      * @param intervalMinutes How often to run (minimum 15 minutes)
      * @param maxConcurrent Maximum number of concurrent upload/download tasks
      */
     private fun scheduleProcessor(
-        context: Context,
         intervalMinutes: Long = PROCESSOR_INTERVAL_MINUTES,
         maxConcurrent: Int = MAX_CONCURRENT
     ) {
@@ -121,11 +110,9 @@ object PeriodicSyncScheduler {
      * Schedule the CleanupCompletedTasksWorker to run periodically.
      * This worker deletes completed and failed sync tasks from the database.
      *
-     * @param context Application context
      * @param intervalHours How often to run (minimum 1 hour, default 24 hours)
      */
     private fun scheduleCleanup(
-        context: Context,
         intervalHours: Long = CLEANUP_INTERVAL_HOURS
     ) {
         val cleanupRequest = PeriodicWorkRequestBuilder<CleanupCompletedTasksWorker>(
@@ -143,5 +130,19 @@ object PeriodicSyncScheduler {
         )
 
         Log.d(TAG, "Cleanup scheduled to run every $intervalHours hours")
+    }
+
+    companion object {
+        private const val TAG = "PeriodicSyncScheduler"
+
+        private const val FOLDER_SCAN_INTERVAL_MINUTES = 30L
+        private const val PROCESSOR_INTERVAL_MINUTES = 15L
+        private const val CLEANUP_INTERVAL_HOURS = 24L
+        private const val MAX_CONCURRENT = 3
+
+        private const val WORKER_TAG_PERIODIC_SYNC = "periodic_sync"
+        private const val WORKER_TAG_FOLDER_SCAN = "folder_scan"
+        private const val WORKER_TAG_PROCESSOR = "processor"
+        private const val WORKER_TAG_CLEANUP = "cleanup"
     }
 }

@@ -2,17 +2,21 @@ package com.morshues.morshuesandroid.data.worker
 
 import android.content.Context
 import android.util.Log
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 
 /**
  * CleanupCompletedTasksWorker deletes completed sync tasks from the database.
  * This worker runs daily to keep the database clean and prevent it from growing indefinitely.
  */
-class CleanupCompletedTasksWorker(
-    context: Context,
-    params: WorkerParameters,
+@HiltWorker
+class CleanupCompletedTasksWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
     private val syncTaskRepository: SyncTaskRepository,
 ) : CoroutineWorker(context, params) {
 

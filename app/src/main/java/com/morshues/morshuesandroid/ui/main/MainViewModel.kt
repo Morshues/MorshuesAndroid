@@ -7,18 +7,21 @@ import com.morshues.morshuesandroid.data.SessionStore
 import com.morshues.morshuesandroid.data.repository.AuthRepository
 import com.morshues.morshuesandroid.ui.AppDestinations
 import com.morshues.morshuesandroid.utils.JwtUtils
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class MainUiState(
     val isLoading: Boolean = true,
     val startRoute: String? = null
 )
 
-class MainViewModel(
+@HiltViewModel
+class MainViewModel @Inject constructor(
     private val sessionStore: SessionStore,
     private val authRepository: AuthRepository
 ) : ViewModel() {

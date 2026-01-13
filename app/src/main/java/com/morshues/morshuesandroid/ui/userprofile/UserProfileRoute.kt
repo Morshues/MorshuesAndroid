@@ -8,14 +8,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.morshues.morshuesandroid.di.AppModule
 
 @Composable
 fun UserProfileRoute(navController: NavController) {
-    val factory = UserProfileViewModelFactory(AppModule.sessionStore)
-    val viewModel: UserProfileViewModel = viewModel(factory = factory)
+    val viewModel: UserProfileViewModel = hiltViewModel()
     val user by viewModel.user.collectAsState(initial = null)
 
     if (user != null) {

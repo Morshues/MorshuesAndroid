@@ -2,10 +2,13 @@ package com.morshues.morshuesandroid.data.worker
 
 import android.content.Context
 import android.util.Log
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.morshues.morshuesandroid.data.repository.SyncTaskRepository
 import com.morshues.morshuesandroid.data.sync.SyncTaskEnqueuer
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
@@ -19,9 +22,10 @@ import kotlinx.coroutines.flow.first
  * - Waits between batches to allow workers to start and update their status
  * - Ensures all pending tasks are processed without waiting for next periodic run
  */
-class SyncProcessorWorker(
-    context: Context,
-    params: WorkerParameters,
+@HiltWorker
+class SyncProcessorWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
     private val syncTaskRepository: SyncTaskRepository,
     private val syncTaskEnqueuer: SyncTaskEnqueuer,
 ) : CoroutineWorker(context, params) {

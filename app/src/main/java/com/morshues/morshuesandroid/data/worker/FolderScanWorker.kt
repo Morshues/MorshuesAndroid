@@ -2,19 +2,23 @@ package com.morshues.morshuesandroid.data.worker
 
 import android.content.Context
 import android.util.Log
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.morshues.morshuesandroid.data.repository.SyncingFolderRepository
 import com.morshues.morshuesandroid.domain.usecase.SyncFolderUseCase
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 
 /**
  * FolderScanWorker scans all syncing folders and creates sync tasks in the database.
  * This worker runs periodically to check for new files that need to be synced.
  */
-class FolderScanWorker(
-    context: Context,
-    params: WorkerParameters,
+@HiltWorker
+class FolderScanWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
     private val syncingFolderRepository: SyncingFolderRepository,
     private val syncFolderUseCase: SyncFolderUseCase,
 ) : CoroutineWorker(context, params) {

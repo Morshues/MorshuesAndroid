@@ -8,6 +8,7 @@ import com.morshues.morshuesandroid.data.repository.SyncingFolderRepository
 import com.morshues.morshuesandroid.data.sync.SyncTaskEnqueuer
 import com.morshues.morshuesandroid.domain.usecase.SyncFolderUseCase
 import com.morshues.morshuesandroid.settings.SettingsManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed interface SettingsAction {
     sealed interface ServerUrl : SettingsAction {
@@ -44,7 +46,8 @@ data class SettingsUiState(
     val errorMessage: String? = null,
 )
 
-class SettingsViewModel(
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
     private val settingsManager: SettingsManager,
     private val syncTaskRepository: SyncTaskRepository,
     private val syncingFolderRepository: SyncingFolderRepository,
