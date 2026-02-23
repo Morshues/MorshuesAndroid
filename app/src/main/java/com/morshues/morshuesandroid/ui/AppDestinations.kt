@@ -4,5 +4,6 @@ object AppDestinations {
     const val LOGIN_ROUTE = "login"
     const val USER_PROFILE_ROUTE = "userProfile"
     const val FILE_SYNC_ROUTE = "fileSync"
+    const val REMOTE_CONTROL_ROUTE = "remoteControl"
     const val SETTINGS_ROUTE = "settings"
 }

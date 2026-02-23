@@ -31,6 +31,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 import androidx.activity.enableEdgeToEdge
 import com.morshues.morshuesandroid.ui.filesync.FileSyncRoute
+import com.morshues.morshuesandroid.ui.remotecontrol.RemoteControlRoute
 import com.morshues.morshuesandroid.ui.settings.SettingsRoute
 
 @AndroidEntryPoint
@@ -81,8 +82,14 @@ class MainActivity : ComponentActivity() {
                                         label = { Text("Functions") },
                                     )
                                     NavigationBarItem(
-                                        selected = false,
-                                        onClick = { },
+                                        selected = currentRoute == AppDestinations.REMOTE_CONTROL_ROUTE,
+                                        onClick = {
+                                            navController.navigate(AppDestinations.REMOTE_CONTROL_ROUTE) {
+                                                popUpTo(startDestination) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        },
                                         icon = { Icon(painterResource(R.drawable.round_gamepad_24), contentDescription = "Remote") },
                                         label = { Text("Remote") },
                                     )
@@ -118,6 +125,9 @@ class MainActivity : ComponentActivity() {
                             }
                             composable(AppDestinations.SETTINGS_ROUTE) {
                                 SettingsRoute(navController = navController)
+                            }
+                            composable(AppDestinations.REMOTE_CONTROL_ROUTE) {
+                                RemoteControlRoute(navController = navController)
                             }
                         }
                     }

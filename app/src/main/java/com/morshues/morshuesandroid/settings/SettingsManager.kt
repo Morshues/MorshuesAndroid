@@ -78,6 +78,30 @@ class SettingsManager(private val context: Context) {
         }
     }
 
+    fun getRemoteControlHost(): Flow<String> {
+        return context.dataStore.data.map { preferences ->
+            preferences[REMOTE_CONTROL_HOST_KEY] ?: ""
+        }
+    }
+
+    suspend fun setRemoteControlHost(host: String) {
+        context.dataStore.edit { preferences ->
+            preferences[REMOTE_CONTROL_HOST_KEY] = host
+        }
+    }
+
+    fun getRemoteControlPort(): Flow<String> {
+        return context.dataStore.data.map { preferences ->
+            preferences[REMOTE_CONTROL_PORT_KEY] ?: ""
+        }
+    }
+
+    suspend fun setRemoteControlPort(port: String) {
+        context.dataStore.edit { preferences ->
+            preferences[REMOTE_CONTROL_PORT_KEY] = port
+        }
+    }
+
     companion object {
         const val DEFAULT_SERVER_PATH = "http://10.0.2.2:3000/"
         private val DEFAULT_ROOT_URL_SET = setOf(DEFAULT_SERVER_PATH)
@@ -95,5 +119,8 @@ class SettingsManager(private val context: Context) {
         const val SYNC_MODE_UPLOAD_ONLY = "UPLOAD_ONLY"
         const val SYNC_MODE_DISABLED = "DISABLED"
         private val SYNC_MODE_KEY = stringPreferencesKey("sync_mode")
+
+        private val REMOTE_CONTROL_HOST_KEY = stringPreferencesKey("remote_control_host")
+        private val REMOTE_CONTROL_PORT_KEY = stringPreferencesKey("remote_control_port")
     }
 }
