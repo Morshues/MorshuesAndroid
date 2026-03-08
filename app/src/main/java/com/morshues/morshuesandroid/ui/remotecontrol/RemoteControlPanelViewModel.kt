@@ -50,19 +50,10 @@ class RemoteControlPanelViewModel @Inject constructor(
     // {"action":"link_page_navigate","data":{"instruction":"scroll","direction":"up|down|left|right","delta":N}}
     fun sendScroll(x: Float, y: Float) {
         if (abs(x) < 0.05f && abs(y) < 0.05f) return
-        val direction: String
-        val magnitude: Float
-        if (abs(x) >= abs(y)) {
-            direction = if (x > 0) "right" else "left"
-            magnitude = abs(x)
-        } else {
-            direction = if (y > 0) "down" else "up"
-            magnitude = abs(y)
-        }
         webSocketManager.send("link_page_navigate", buildJsonObject {
             put("instruction", "scroll")
-            put("direction", direction)
-            put("delta", (magnitude * 100).toInt())
+            put("x", x * -100)
+            put("y", y * -100)
         })
     }
 

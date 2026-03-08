@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.morshues.morshuesandroid.ui.theme.MainAndroidTheme
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 private val BaseSize = 200.dp
@@ -31,8 +34,26 @@ private val ThumbSize = 64.dp
 @Composable
 fun JoystickScreen(
     onJoystickMove: (x: Float, y: Float) -> Unit,
+    sendIntervalMs: Long = 50L,
 ) {
+    // Visual offset in raw pixels — drives the thumb position on screen
     var thumbOffset by remember { mutableStateOf(Offset.Zero) }
+    // Normalized -1..1 value; updated by drag, read by the periodic ticker
+    var normalizedOffset by remember { mutableStateOf(Offset.Zero) }
+
+    val currentOnJoystickMove by rememberUpdatedState(onJoystickMove)
+
+    // Periodic ticker: fires at fixed interval and sends the current value while the
+    // joystick is held away from center. Skips silently when back at zero.
+    LaunchedEffect(sendIntervalMs) {
+        while (true) {
+            delay(sendIntervalMs)
+            val v = normalizedOffset
+            if (v != Offset.Zero) {
+                currentOnJoystickMove(v.x, v.y)
+            }
+        }
+    }
 
     val baseColor = MaterialTheme.colorScheme.surfaceVariant
     val baseStrokeColor = MaterialTheme.colorScheme.outline
@@ -50,12 +71,19 @@ fun JoystickScreen(
                 fun updateThumb(position: Offset) {
                     val raw = position - center
                     val distance = raw.getDistance()
-                    thumbOffset = if (distance <= maxDistance) raw
+                    val clamped = if (distance <= maxDistance) raw
                                   else raw / distance * maxDistance
-                    onJoystickMove(
-                        (thumbOffset.x / maxDistance).coerceIn(-1f, 1f),
-                        (thumbOffset.y / maxDistance).coerceIn(-1f, 1f),
+                    thumbOffset = clamped
+                    normalizedOffset = Offset(
+                        (clamped.x / maxDistance).coerceIn(-1f, 1f),
+                        (clamped.y / maxDistance).coerceIn(-1f, 1f),
                     )
+                }
+
+                fun resetThumb() {
+                    thumbOffset = Offset.Zero
+                    normalizedOffset = Offset.Zero
+                    currentOnJoystickMove(0f, 0f)
                 }
 
                 detectDragGestures(
@@ -64,14 +92,8 @@ fun JoystickScreen(
                         change.consume()
                         updateThumb(change.position)
                     },
-                    onDragEnd = {
-                        thumbOffset = Offset.Zero
-                        onJoystickMove(0f, 0f)
-                    },
-                    onDragCancel = {
-                        thumbOffset = Offset.Zero
-                        onJoystickMove(0f, 0f)
-                    },
+                    onDragEnd = { resetThumb() },
+                    onDragCancel = { resetThumb() },
                 )
             },
     ) {
