@@ -70,6 +70,13 @@ class RemoteFileRepository(
         )
     }
 
+    suspend fun deleteFile(folderPath: String, fileName: String) {
+        api.deleteFile(
+            folderName = folderPath.encodeFolderName(),
+            fileName = fileName,
+        )
+    }
+
     // Could be replaced with DateTimeFormatter.RFC_1123_DATE_TIME if api >= 26
     private fun String?.toHttpDateMillis(): Long? {
         if (this.isNullOrBlank()) return null

@@ -1,7 +1,14 @@
 package com.morshues.morshuesandroid.ui.filesync
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,6 +22,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,7 +34,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -46,7 +58,7 @@ import com.morshues.morshuesandroid.ui.components.CommonTopBar
 import com.morshues.morshuesandroid.ui.components.MenuItem
 import com.morshues.morshuesandroid.ui.theme.MainAndroidTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun FileSyncScreen(
     navController: NavController,
@@ -55,6 +67,9 @@ fun FileSyncScreen(
     canBackward: () -> Boolean = { false },
     onBackward: () -> Boolean,
     setSyncingFolder: (String, Boolean) -> Unit,
+    onDeleteFromServer: (FileItem) -> Unit = {},
+    onLocalDeleteConfirmed: () -> Unit = {},
+    onLocalDeleteDismissed: () -> Unit = {},
     onErrorDismissed: () -> Unit = {},
 ) {
     val syncingFolderPaths = uiState.syncingFolderPaths
@@ -62,6 +77,20 @@ fun FileSyncScreen(
     val isCurrentFolderSyncing = uiState.isCurrentFolderSyncing
     val currentFolderRemoteFiles = uiState.currentFolderRemoteFilesSet
     val snackbarHostState = remember { SnackbarHostState() }
+    var selectedFileForMenu by remember { mutableStateOf<FileItem?>(null) }
+
+    val deleteRequestLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) onLocalDeleteConfirmed()
+        else onLocalDeleteDismissed()
+    }
+
+    LaunchedEffect(uiState.pendingDeleteIntentSender) {
+        uiState.pendingDeleteIntentSender?.let { intentSender ->
+            deleteRequestLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+        }
+    }
 
     BackHandler {
         if (onBackward().not()) {
@@ -140,76 +169,103 @@ fun FileSyncScreen(
                     file.path in syncingFolderPaths
                 }
 
-                Card(
-                    onClick = { onFileItemSelected(file) },
-                ) {
-                    Column(Modifier.padding(10.dp)) {
-                        when (file) {
-                            is FolderItem -> {
-                                Icon(
-                                    painter = painterResource(R.drawable.baseline_folder_24),
-                                    contentDescription = file.name,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(1f)
-                                )
+                Box {
+                    Card(
+                        modifier = Modifier.combinedClickable(
+                            onClick = { onFileItemSelected(file) },
+                            onLongClick = {
+                                if (file is FileItem) selectedFileForMenu = file
+                            },
+                        ),
+                    ) {
+                        Column(Modifier.padding(10.dp)) {
+                            when (file) {
+                                is FolderItem -> {
+                                    Icon(
+                                        painter = painterResource(R.drawable.baseline_folder_24),
+                                        contentDescription = file.name,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .aspectRatio(1f)
+                                    )
+                                }
+                                is FileItem -> {
+                                    AsyncImage(
+                                        model = file.path,
+                                        contentDescription = file.name,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .aspectRatio(1f),
+                                        contentScale = ContentScale.Crop,
+                                        placeholder = painterResource(R.drawable.outline_lab_profile_24),
+                                        error = painterResource(R.drawable.outline_lab_profile_24),
+                                        fallback = painterResource(R.drawable.outline_lab_profile_24),
+                                    )
+                                }
                             }
-                            is FileItem -> {
-                                AsyncImage(
-                                    model = file.path,
-                                    contentDescription = file.name,
+                            Row {
+                                Text(
+                                    text = file.name,
+                                    fontSize = 18.sp,
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(1f),
-                                    contentScale = ContentScale.Crop,
-                                    placeholder = painterResource(R.drawable.outline_lab_profile_24),
-                                    error = painterResource(R.drawable.outline_lab_profile_24),
-                                    fallback = painterResource(R.drawable.outline_lab_profile_24),
+                                        .align(Alignment.CenterVertically)
+                                        .weight(1f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
-                            }
-                        }
-                        Row {
-                            Text(
-                                text = file.name,
-                                fontSize = 18.sp,
-                                modifier = Modifier
-                                    .align(Alignment.CenterVertically)
-                                    .weight(1f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
 
-                            if (file is FileItem && isCurrentFolderSyncing) {
-                                val syncStatusRes = if (file.name in currentFolderRemoteFiles) {
-                                    R.drawable.outline_check_24
-                                } else {
-                                    R.drawable.outline_cloud_upload_24
-                                }
-                                Icon(
-                                    painter = painterResource(syncStatusRes),
-                                    contentDescription = "Sync",
-                                    modifier = Modifier.size(24.dp),
-                                )
-                            } else if (file is FolderItem) {
-                                val syncStatusRes = if (isSyncing) {
-                                    R.drawable.outline_sync_24
-                                } else {
-                                    R.drawable.outline_sync_disabled_24
-                                }
-                                IconButton(
-                                    modifier = Modifier.size(24.dp),
-                                    onClick = {
-                                        setSyncingFolder(file.path, !isSyncing)
+                                if (file is FileItem && isCurrentFolderSyncing) {
+                                    val syncStatusRes = if (file.name in currentFolderRemoteFiles) {
+                                        R.drawable.outline_check_24
+                                    } else {
+                                        R.drawable.outline_cloud_upload_24
                                     }
-                                ) {
                                     Icon(
                                         painter = painterResource(syncStatusRes),
                                         contentDescription = "Sync",
                                         modifier = Modifier.size(24.dp),
                                     )
+                                } else if (file is FolderItem) {
+                                    val syncStatusRes = if (isSyncing) {
+                                        R.drawable.outline_sync_24
+                                    } else {
+                                        R.drawable.outline_sync_disabled_24
+                                    }
+                                    IconButton(
+                                        modifier = Modifier.size(24.dp),
+                                        onClick = {
+                                            setSyncingFolder(file.path, !isSyncing)
+                                        }
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(syncStatusRes),
+                                            contentDescription = "Sync",
+                                            modifier = Modifier.size(24.dp),
+                                        )
+                                    }
                                 }
                             }
+                        }
+                    }
+                    if (file is FileItem) {
+                        DropdownMenu(
+                            expanded = selectedFileForMenu == file,
+                            onDismissRequest = { selectedFileForMenu = null },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Delete from server") },
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.rounded_delete_24),
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    selectedFileForMenu = null
+                                    onDeleteFromServer(file)
+                                },
+                            )
                         }
                     }
                 }

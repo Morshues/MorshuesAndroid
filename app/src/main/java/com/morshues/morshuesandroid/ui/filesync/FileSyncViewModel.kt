@@ -1,5 +1,7 @@
 package com.morshues.morshuesandroid.ui.filesync
 
+import android.content.IntentSender
+import android.os.Build
 import android.os.Environment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,6 +12,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.morshues.morshuesandroid.data.db.entity.SyncingFolder
+import com.morshues.morshuesandroid.data.model.FileItem
 import com.morshues.morshuesandroid.data.model.FolderItem
 import com.morshues.morshuesandroid.data.model.StorageItem
 import com.morshues.morshuesandroid.data.model.toStorageItem
@@ -43,6 +46,8 @@ data class FileSyncUiState(
     val syncInProgressCount: Int = 0,
     val syncPendingCount: Int = 0,
     val errorMessage: String? = null,
+    val pendingLocalDeleteFile: FileItem? = null,
+    val pendingDeleteIntentSender: IntentSender? = null,
 ) {
     val syncingFolderPaths: Set<String> = syncingFolders.map { it.path }.toSet()
 
@@ -236,5 +241,69 @@ class FileSyncViewModel @Inject constructor(
             ExistingWorkPolicy.KEEP,
             processorRequest
         )
+    }
+
+    fun deleteFile(file: FileItem) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessing = true, errorMessage = null) }
+
+            val deleted = withContext(Dispatchers.IO) { localFileRepository.deleteFile(file.path) }
+            if (deleted) {
+                deleteFromServer(file)
+                return@launch
+            }
+
+            // File is owned by another app — request user confirmation via system dialog
+            val intentSender = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                withContext(Dispatchers.IO) { localFileRepository.getDeleteIntentSender(file.path) }
+            } else null
+
+            if (intentSender != null) {
+                _uiState.update {
+                    it.copy(
+                        isProcessing = false,
+                        pendingLocalDeleteFile = file,
+                        pendingDeleteIntentSender = intentSender,
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(isProcessing = false, errorMessage = "Failed to delete local file")
+                }
+            }
+        }
+    }
+
+    fun onLocalDeleteConfirmed() {
+        val file = _uiState.value.pendingLocalDeleteFile ?: return
+        _uiState.update { it.copy(pendingLocalDeleteFile = null, pendingDeleteIntentSender = null) }
+        viewModelScope.launch { deleteFromServer(file) }
+    }
+
+    fun onLocalDeleteDismissed() {
+        _uiState.update { it.copy(pendingLocalDeleteFile = null, pendingDeleteIntentSender = null) }
+    }
+
+    private suspend fun deleteFromServer(file: FileItem) {
+        val currentFolder = _uiState.value.currentFolder ?: return
+        _uiState.update { it.copy(isProcessing = true) }
+        try {
+            remoteFileRepository.deleteFile(currentFolder.path, file.name)
+            val newFiles = localFileRepository.listFiles(currentFolder.path)
+            _uiState.update { state ->
+                val updatedRemoteFiles = state.currentFolderRemoteFilesSet.toMutableSet()
+                updatedRemoteFiles.remove(file.name)
+                state.copy(
+                    files = newFiles,
+                    currentFolderRemoteFilesSet = updatedRemoteFiles,
+                    isProcessing = false,
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _uiState.update {
+                it.copy(isProcessing = false, errorMessage = "Failed to delete from server: ${e.message}")
+            }
+        }
     }
 }

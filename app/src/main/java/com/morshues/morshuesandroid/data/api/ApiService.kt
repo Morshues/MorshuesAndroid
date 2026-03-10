@@ -9,6 +9,7 @@ import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Multipart
@@ -52,5 +53,12 @@ interface ApiService {
         @Path("folderName", encoded = true) folderName: String,
         @Path("fileName") fileName: String,
     ): Response<ResponseBody>
+
+    @DELETE("api/file-sync/{folderName}/files/{fileName}")
+    suspend fun deleteFile(
+        @Header("Authorization") authorization: String? = null,
+        @Path("folderName", encoded = true) folderName: String,
+        @Path("fileName") fileName: String,
+    ): Unit
 
 }
