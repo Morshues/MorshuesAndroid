@@ -17,7 +17,8 @@ import javax.inject.Inject
 
 data class MainUiState(
     val isLoading: Boolean = true,
-    val startRoute: String? = null
+    val startRoute: String? = null,
+    val refreshError: String? = null,
 )
 
 @HiltViewModel
@@ -45,9 +46,28 @@ class MainViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false, startRoute = AppDestinations.FILE_SYNC_ROUTE) }
             } catch (e: Exception) {
                 Log.i(TAG, "Refresh token failed: (${e.message})")
-                sessionStore.clear()
-                _uiState.update { it.copy(isLoading = false, startRoute = AppDestinations.LOGIN_ROUTE) }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        refreshError = e.message ?: "Unknown error",
+                    )
+                }
             }
+        }
+    }
+
+    fun confirmLogout() {
+        viewModelScope.launch {
+            sessionStore.clear()
+            _uiState.update {
+                it.copy(refreshError = null, startRoute = AppDestinations.LOGIN_ROUTE)
+            }
+        }
+    }
+
+    fun dismissRefreshError() {
+        _uiState.update {
+            it.copy(refreshError = null, startRoute = AppDestinations.FILE_SYNC_ROUTE)
         }
     }
 

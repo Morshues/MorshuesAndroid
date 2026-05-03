@@ -7,12 +7,14 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -51,6 +53,29 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
+                }
+                else if (mainUiState.refreshError != null) {
+                    AlertDialog(
+                        onDismissRequest = { mainViewModel.dismissRefreshError() },
+                        title = { Text("Session refresh failed") },
+                        text = {
+                            Text(
+                                "Reason: ${mainUiState.refreshError}\n\n" +
+                                    "If the server is temporarily unreachable, you can keep your " +
+                                    "session and try again later. Otherwise, log out to sign in again."
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { mainViewModel.confirmLogout() }) {
+                                Text("Log out")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { mainViewModel.dismissRefreshError() }) {
+                                Text("Keep session")
+                            }
+                        },
+                    )
                 }
                 else {
                     val navController = rememberNavController()
