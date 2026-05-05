@@ -48,6 +48,7 @@ data class FileSyncUiState(
     val errorMessage: String? = null,
     val pendingLocalDeleteFile: FileItem? = null,
     val pendingDeleteIntentSender: IntentSender? = null,
+    val sortAscending: Boolean = true,
 ) {
     val syncingFolderPaths: Set<String> = syncingFolders.map { it.path }.toSet()
 
@@ -125,7 +126,7 @@ class FileSyncViewModel @Inject constructor(
 
     private fun listDeviceFiles(file: StorageItem) {
         val newBreadCrumbs = _uiState.value.breadCrumbs + file
-        val newFiles = localFileRepository.listFiles(file.path)
+        val newFiles = localFileRepository.listFiles(file.path, _uiState.value.sortAscending)
         _uiState.update { it.copy(breadCrumbs = newBreadCrumbs, files = newFiles) }
     }
 
@@ -145,7 +146,10 @@ class FileSyncViewModel @Inject constructor(
             return false
         }
         val newBreadCrumbs = _uiState.value.breadCrumbs.dropLast(1)
-        val newFiles = localFileRepository.listFiles(newBreadCrumbs.last().path)
+        val newFiles = localFileRepository.listFiles(
+            newBreadCrumbs.last().path,
+            _uiState.value.sortAscending,
+        )
         _uiState.update { it.copy(breadCrumbs = newBreadCrumbs, files = newFiles) }
 
         _uiState.value.currentFolder?.path?.let {
@@ -165,6 +169,14 @@ class FileSyncViewModel @Inject constructor(
                 syncTaskRepository.deleteTasksByFolder(path)
             }
         }
+    }
+
+    fun toggleSortOrder() {
+        val newAscending = !_uiState.value.sortAscending
+        val currentPath = _uiState.value.currentFolder?.path
+        val newFiles = currentPath?.let { localFileRepository.listFiles(it, newAscending) }
+            ?: _uiState.value.files
+        _uiState.update { it.copy(sortAscending = newAscending, files = newFiles) }
     }
 
     fun clearErrorMessage() {
@@ -289,7 +301,10 @@ class FileSyncViewModel @Inject constructor(
         _uiState.update { it.copy(isProcessing = true) }
         try {
             remoteFileRepository.deleteFile(currentFolder.path, file.name)
-            val newFiles = localFileRepository.listFiles(currentFolder.path)
+            val newFiles = localFileRepository.listFiles(
+                currentFolder.path,
+                _uiState.value.sortAscending,
+            )
             _uiState.update { state ->
                 val updatedRemoteFiles = state.currentFolderRemoteFilesSet.toMutableSet()
                 updatedRemoteFiles.remove(file.name)

@@ -21,6 +21,7 @@ fun FileSyncRoute(
             canBackward = fileSyncViewModel::canBackward,
             onBackward = fileSyncViewModel::backward,
             setSyncingFolder = fileSyncViewModel::setSyncingFolder,
+            onToggleSortOrder = fileSyncViewModel::toggleSortOrder,
             onDeleteFromServer = fileSyncViewModel::deleteFile,
             onLocalDeleteConfirmed = fileSyncViewModel::onLocalDeleteConfirmed,
             onLocalDeleteDismissed = fileSyncViewModel::onLocalDeleteDismissed,

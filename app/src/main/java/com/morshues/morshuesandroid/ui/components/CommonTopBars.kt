@@ -73,7 +73,10 @@ fun CommonTopBar(
                     )
                 }
             } else {
-                IconButton(onClick = { showMenu = true }) {
+                IconButton(
+                    onClick = { showMenu = true },
+                    modifier = Modifier.size(48.dp)
+                ) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_menu_24),
                         contentDescription = "Menu",

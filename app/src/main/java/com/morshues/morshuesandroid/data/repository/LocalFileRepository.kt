@@ -22,31 +22,19 @@ import java.io.FileOutputStream
 class LocalFileRepository(
     private val context: Context
 ) {
-    fun listFiles(path: String): List<StorageItem> {
+    fun listFiles(path: String, ascending: Boolean = true): List<StorageItem> {
         val dir = File(path)
-        return dir.listFiles()
+        val items = dir.listFiles()
             // Ignore hide files
-            ?.filter {
-                !it.name.startsWith(".")
-            }?.map {
-                it.toStorageItem()
-            }?.sortedWith(
-                compareBy(
-                    { item ->
-                        when (item) {
-                            is FolderItem -> 0
-                            is FileItem -> 1
-                        }
-                    },
-                    { it.name },
-                    { item ->
-                        when (item) {
-                            is FileItem -> item.lastModified
-                            is FolderItem -> Long.MAX_VALUE
-                        }
-                    }
-                )
-            ) ?: emptyList()
+            ?.filter { !it.name.startsWith(".") }
+            ?.map { it.toStorageItem() }
+            ?: return emptyList()
+
+        val folders = items.filterIsInstance<FolderItem>().sortedBy { it.name }
+        val files = items.filterIsInstance<FileItem>()
+            .sortedWith(compareBy({ it.lastModified }, { it.name }))
+            .let { if (ascending) it else it.reversed() }
+        return folders + files
     }
 
     /**

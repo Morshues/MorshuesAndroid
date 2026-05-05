@@ -67,6 +67,7 @@ fun FileSyncScreen(
     canBackward: () -> Boolean = { false },
     onBackward: () -> Boolean,
     setSyncingFolder: (String, Boolean) -> Unit,
+    onToggleSortOrder: () -> Unit = {},
     onDeleteFromServer: (FileItem) -> Unit = {},
     onLocalDeleteConfirmed: () -> Unit = {},
     onLocalDeleteDismissed: () -> Unit = {},
@@ -127,13 +128,28 @@ fun FileSyncScreen(
                 statusAction = {
                     if (uiState.isProcessing) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier
+                                .size(24.dp)
+                                .padding(12.dp)
                         )
                     } else if (uiState.isSyncing) {
                         Icon(
                             painter = painterResource(R.drawable.outline_cloud_upload_24),
                             contentDescription = "Syncing...",
                             tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = onToggleSortOrder,
+                        modifier = Modifier.size(48.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                if (uiState.sortAscending) R.drawable.rounded_timer_arrow_down_24
+                                else R.drawable.rounded_timer_arrow_up_24
+                            ),
+                            contentDescription = if (uiState.sortAscending) "Sort ascending" else "Sort descending",
                             modifier = Modifier.size(24.dp)
                         )
                     }
