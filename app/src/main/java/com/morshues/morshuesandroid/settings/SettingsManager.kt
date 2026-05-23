@@ -78,6 +78,18 @@ class SettingsManager(private val context: Context) {
         }
     }
 
+    fun getFileSyncViewType(): Flow<String> {
+        return context.dataStore.data.map { preferences ->
+            preferences[FILE_SYNC_VIEW_TYPE_KEY] ?: DEFAULT_FILE_SYNC_VIEW_TYPE
+        }
+    }
+
+    suspend fun setFileSyncViewType(viewType: String) {
+        context.dataStore.edit { preferences ->
+            preferences[FILE_SYNC_VIEW_TYPE_KEY] = viewType
+        }
+    }
+
     fun getRemoteControlHost(): Flow<String> {
         return context.dataStore.data.map { preferences ->
             preferences[REMOTE_CONTROL_HOST_KEY] ?: ""
@@ -119,6 +131,11 @@ class SettingsManager(private val context: Context) {
         const val SYNC_MODE_UPLOAD_ONLY = "UPLOAD_ONLY"
         const val SYNC_MODE_DISABLED = "DISABLED"
         private val SYNC_MODE_KEY = stringPreferencesKey("sync_mode")
+
+        const val FILE_SYNC_VIEW_TYPE_FILE_SYSTEM = "FILE_SYSTEM"
+        const val FILE_SYNC_VIEW_TYPE_SYNCING_ONLY = "SYNCING_ONLY"
+        const val DEFAULT_FILE_SYNC_VIEW_TYPE = FILE_SYNC_VIEW_TYPE_FILE_SYSTEM
+        private val FILE_SYNC_VIEW_TYPE_KEY = stringPreferencesKey("file_sync_view_type")
 
         private val REMOTE_CONTROL_HOST_KEY = stringPreferencesKey("remote_control_host")
         private val REMOTE_CONTROL_PORT_KEY = stringPreferencesKey("remote_control_port")

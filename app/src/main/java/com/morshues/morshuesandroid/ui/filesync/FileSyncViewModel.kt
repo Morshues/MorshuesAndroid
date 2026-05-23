@@ -24,18 +24,24 @@ import com.morshues.morshuesandroid.data.repository.SyncingFolderRepository
 import com.morshues.morshuesandroid.data.sync.SyncTaskEnqueuer
 import com.morshues.morshuesandroid.data.worker.SyncProcessorWorker
 import com.morshues.morshuesandroid.domain.usecase.SyncFolderUseCase
+import com.morshues.morshuesandroid.settings.SettingsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+
+enum class FileSyncViewType { FILE_SYSTEM, SYNCING_ONLY }
+
+const val SYNCING_ROOT_PATH = "__syncing_root__"
 
 data class FileSyncUiState(
     val breadCrumbs: List<StorageItem> = emptyList(),
@@ -49,12 +55,16 @@ data class FileSyncUiState(
     val pendingLocalDeleteFile: FileItem? = null,
     val pendingDeleteIntentSender: IntentSender? = null,
     val sortAscending: Boolean = true,
+    val viewType: FileSyncViewType = FileSyncViewType.FILE_SYSTEM,
 ) {
     val syncingFolderPaths: Set<String> = syncingFolders.map { it.path }.toSet()
 
     val currentFolder: StorageItem? = breadCrumbs.lastOrNull()
 
     val isCurrentFolderSyncing: Boolean = currentFolder?.path in syncingFolderPaths
+
+    val isAtSyncingRoot: Boolean =
+        viewType == FileSyncViewType.SYNCING_ONLY && breadCrumbs.size == 1
 
     val isSyncing
         get() = syncInProgressCount + syncPendingCount > 0
@@ -69,20 +79,47 @@ class FileSyncViewModel @Inject constructor(
     private val syncTaskEnqueuer: SyncTaskEnqueuer,
     private val syncFolderUseCase: SyncFolderUseCase,
     private val workManager: WorkManager,
+    private val settingsManager: SettingsManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FileSyncUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
-        val defaultRootDir = Environment.getExternalStorageDirectory().toStorageItem()
-        listDeviceFiles(defaultRootDir)
+        viewModelScope.launch {
+            val savedViewType = settingsManager.getFileSyncViewType().first()
+            if (savedViewType == SettingsManager.FILE_SYNC_VIEW_TYPE_SYNCING_ONLY) {
+                val syncingFolders = syncingFolderRepository.getSyncingFolders().first()
+                val syncingRoot = FolderItem(name = "Syncing Folders", path = SYNCING_ROOT_PATH)
+                _uiState.update {
+                    it.copy(
+                        viewType = FileSyncViewType.SYNCING_ONLY,
+                        breadCrumbs = listOf(syncingRoot),
+                        files = buildSyncingRootItems(syncingFolders),
+                        syncingFolders = syncingFolders,
+                    )
+                }
+            } else {
+                val defaultRootDir = Environment.getExternalStorageDirectory().toStorageItem()
+                listDeviceFiles(defaultRootDir)
+            }
+            startObservers()
+        }
+    }
 
+    private fun startObservers() {
         syncingFolderRepository.getSyncingFolders()
             .flowOn(Dispatchers.IO)
             .distinctUntilChanged()
             .onEach { folders ->
-                _uiState.update { it.copy(syncingFolders = folders) }
+                _uiState.update { state ->
+                    val updated = state.copy(syncingFolders = folders)
+                    if (updated.isAtSyncingRoot) {
+                        updated.copy(files = buildSyncingRootItems(folders))
+                    } else {
+                        updated
+                    }
+                }
             }
             .launchIn(viewModelScope)
 
@@ -126,8 +163,18 @@ class FileSyncViewModel @Inject constructor(
 
     private fun listDeviceFiles(file: StorageItem) {
         val newBreadCrumbs = _uiState.value.breadCrumbs + file
-        val newFiles = localFileRepository.listFiles(file.path, _uiState.value.sortAscending)
+        val newFiles = filterForViewType(
+            localFileRepository.listFiles(file.path, _uiState.value.sortAscending)
+        )
         _uiState.update { it.copy(breadCrumbs = newBreadCrumbs, files = newFiles) }
+    }
+
+    private fun filterForViewType(items: List<StorageItem>): List<StorageItem> {
+        return if (_uiState.value.viewType == FileSyncViewType.SYNCING_ONLY) {
+            items.filterIsInstance<FileItem>()
+        } else {
+            items
+        }
     }
 
     fun onFileItemSelected(file: StorageItem) {
@@ -146,16 +193,71 @@ class FileSyncViewModel @Inject constructor(
             return false
         }
         val newBreadCrumbs = _uiState.value.breadCrumbs.dropLast(1)
-        val newFiles = localFileRepository.listFiles(
-            newBreadCrumbs.last().path,
-            _uiState.value.sortAscending,
-        )
+        val isSyncingRoot = _uiState.value.viewType == FileSyncViewType.SYNCING_ONLY
+            && newBreadCrumbs.size == 1
+        val newFiles = if (isSyncingRoot) {
+            buildSyncingRootItems(_uiState.value.syncingFolders)
+        } else {
+            filterForViewType(
+                localFileRepository.listFiles(
+                    newBreadCrumbs.last().path,
+                    _uiState.value.sortAscending,
+                )
+            )
+        }
         _uiState.update { it.copy(breadCrumbs = newBreadCrumbs, files = newFiles) }
 
-        _uiState.value.currentFolder?.path?.let {
-            checkRemoteSyncingFolder(it)
+        if (!isSyncingRoot) {
+            _uiState.value.currentFolder?.path?.let {
+                checkRemoteSyncingFolder(it)
+            }
         }
         return true
+    }
+
+    fun toggleViewType() {
+        val newType = if (_uiState.value.viewType == FileSyncViewType.FILE_SYSTEM) {
+            FileSyncViewType.SYNCING_ONLY
+        } else {
+            FileSyncViewType.FILE_SYSTEM
+        }
+        if (newType == FileSyncViewType.SYNCING_ONLY) {
+            val syncingFolders = _uiState.value.syncingFolders
+            val syncingRoot = FolderItem(name = "Syncing Folders", path = SYNCING_ROOT_PATH)
+            _uiState.update {
+                it.copy(
+                    viewType = newType,
+                    breadCrumbs = listOf(syncingRoot),
+                    files = buildSyncingRootItems(syncingFolders),
+                    currentFolderRemoteFilesSet = emptySet(),
+                )
+            }
+        } else {
+            val defaultRootDir = Environment.getExternalStorageDirectory().toStorageItem()
+            _uiState.update {
+                it.copy(
+                    viewType = newType,
+                    breadCrumbs = emptyList(),
+                    currentFolderRemoteFilesSet = emptySet(),
+                )
+            }
+            listDeviceFiles(defaultRootDir)
+        }
+        viewModelScope.launch {
+            settingsManager.setFileSyncViewType(
+                if (newType == FileSyncViewType.SYNCING_ONLY) {
+                    SettingsManager.FILE_SYNC_VIEW_TYPE_SYNCING_ONLY
+                } else {
+                    SettingsManager.FILE_SYNC_VIEW_TYPE_FILE_SYSTEM
+                }
+            )
+        }
+    }
+
+    private fun buildSyncingRootItems(folders: List<SyncingFolder>): List<StorageItem> {
+        return folders
+            .map { FolderItem(name = it.path.substringAfterLast('/'), path = it.path) }
+            .sortedBy { it.name }
     }
 
     fun setSyncingFolder(path: String, toSync: Boolean) {
@@ -174,8 +276,11 @@ class FileSyncViewModel @Inject constructor(
     fun toggleSortOrder() {
         val newAscending = !_uiState.value.sortAscending
         val currentPath = _uiState.value.currentFolder?.path
-        val newFiles = currentPath?.let { localFileRepository.listFiles(it, newAscending) }
-            ?: _uiState.value.files
+        val newFiles = if (_uiState.value.isAtSyncingRoot || currentPath == null) {
+            _uiState.value.files
+        } else {
+            filterForViewType(localFileRepository.listFiles(currentPath, newAscending))
+        }
         _uiState.update { it.copy(sortAscending = newAscending, files = newFiles) }
     }
 
@@ -301,9 +406,11 @@ class FileSyncViewModel @Inject constructor(
         _uiState.update { it.copy(isProcessing = true) }
         try {
             remoteFileRepository.deleteFile(currentFolder.path, file.name)
-            val newFiles = localFileRepository.listFiles(
-                currentFolder.path,
-                _uiState.value.sortAscending,
+            val newFiles = filterForViewType(
+                localFileRepository.listFiles(
+                    currentFolder.path,
+                    _uiState.value.sortAscending,
+                )
             )
             _uiState.update { state ->
                 val updatedRemoteFiles = state.currentFolderRemoteFilesSet.toMutableSet()
