@@ -35,13 +35,29 @@ private val ThumbSize = 64.dp
 fun JoystickScreen(
     onJoystickMove: (x: Float, y: Float) -> Unit,
     sendIntervalMs: Long = 50L,
+    holdOnRelease: Boolean = false,
 ) {
     // Visual offset in raw pixels — drives the thumb position on screen
     var thumbOffset by remember { mutableStateOf(Offset.Zero) }
     // Normalized -1..1 value; updated by drag, read by the periodic ticker
     var normalizedOffset by remember { mutableStateOf(Offset.Zero) }
+    var isDragging by remember { mutableStateOf(false) }
 
     val currentOnJoystickMove by rememberUpdatedState(onJoystickMove)
+    val currentHoldOnRelease by rememberUpdatedState(holdOnRelease)
+
+    fun resetThumb() {
+        thumbOffset = Offset.Zero
+        normalizedOffset = Offset.Zero
+        currentOnJoystickMove(0f, 0f)
+    }
+
+    // When hold is turned off, release a thumb that was left held in place
+    LaunchedEffect(holdOnRelease) {
+        if (!holdOnRelease && !isDragging && normalizedOffset != Offset.Zero) {
+            resetThumb()
+        }
+    }
 
     // Periodic ticker: fires at fixed interval and sends the current value while the
     // joystick is held away from center. Skips silently when back at zero.
@@ -80,20 +96,23 @@ fun JoystickScreen(
                     )
                 }
 
-                fun resetThumb() {
-                    thumbOffset = Offset.Zero
-                    normalizedOffset = Offset.Zero
-                    currentOnJoystickMove(0f, 0f)
+                // With hold enabled, keep the last offset so the ticker keeps sending
+                fun onRelease() {
+                    isDragging = false
+                    if (!currentHoldOnRelease) resetThumb()
                 }
 
                 detectDragGestures(
-                    onDragStart = { updateThumb(it) },
+                    onDragStart = {
+                        isDragging = true
+                        updateThumb(it)
+                    },
                     onDrag = { change, _ ->
                         change.consume()
                         updateThumb(change.position)
                     },
-                    onDragEnd = { resetThumb() },
-                    onDragCancel = { resetThumb() },
+                    onDragEnd = { onRelease() },
+                    onDragCancel = { onRelease() },
                 )
             },
     ) {
