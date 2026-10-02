@@ -1,5 +1,6 @@
 package com.morshues.morshuesandroid.data.websocket
 
+import android.os.SystemClock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,11 +30,25 @@ class WebSocketManager @Inject constructor() {
         data class Error(val message: String) : ConnectionStatus()
     }
 
+    data class VideoState(
+        val title: String = "",
+        val index: Int = 0,
+        val count: Int = 0,
+        val positionMs: Long = 0,
+        val durationMs: Long = 0,
+        val isPlaying: Boolean = false,
+        val speed: Float = 1f,
+        val receivedAt: Long = 0,
+    )
+
     private val _connectionStatus = MutableStateFlow<ConnectionStatus>(ConnectionStatus.Idle)
     val connectionStatus: StateFlow<ConnectionStatus> = _connectionStatus.asStateFlow()
 
     private val _currentScreen = MutableStateFlow<String?>(null)
     val currentScreen: StateFlow<String?> = _currentScreen.asStateFlow()
+
+    private val _videoState = MutableStateFlow<VideoState?>(null)
+    val videoState: StateFlow<VideoState?> = _videoState.asStateFlow()
 
     private val client = OkHttpClient()
     private var webSocket: WebSocket? = null
@@ -66,6 +81,22 @@ class WebSocketManager @Inject constructor() {
                                 ?.get("name")?.jsonPrimitive?.contentOrNull
                             _currentScreen.update { name }
                         }
+                        "video_state" -> {
+                            val data = json["data"]?.jsonObject ?: return
+                            fun field(key: String) = data[key]?.jsonPrimitive?.contentOrNull
+                            _videoState.update {
+                                VideoState(
+                                    title = field("title") ?: "",
+                                    index = field("index")?.toIntOrNull() ?: 0,
+                                    count = field("count")?.toIntOrNull() ?: 0,
+                                    positionMs = field("position")?.toLongOrNull() ?: 0,
+                                    durationMs = field("duration")?.toLongOrNull() ?: 0,
+                                    isPlaying = field("isPlaying")?.toBooleanStrictOrNull() ?: false,
+                                    speed = field("speed")?.toFloatOrNull() ?: 1f,
+                                    receivedAt = SystemClock.elapsedRealtime(),
+                                )
+                            }
+                        }
                     }
                 } catch (_: Exception) {
                     // Ignore malformed messages
@@ -77,11 +108,13 @@ class WebSocketManager @Inject constructor() {
                     ConnectionStatus.Error(t.message ?: "Connection failed")
                 }
                 _currentScreen.update { null }
+                _videoState.update { null }
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                 _connectionStatus.update { ConnectionStatus.Idle }
                 _currentScreen.update { null }
+                _videoState.update { null }
             }
         })
     }
@@ -91,6 +124,7 @@ class WebSocketManager @Inject constructor() {
         webSocket = null
         _connectionStatus.update { ConnectionStatus.Idle }
         _currentScreen.update { null }
+        _videoState.update { null }
     }
 
     fun send(action: String, data: JsonObject? = null): Boolean {

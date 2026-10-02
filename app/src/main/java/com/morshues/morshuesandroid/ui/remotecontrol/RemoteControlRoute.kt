@@ -37,5 +37,15 @@ fun RemoteControlRoute(navController: NavController) {
             onZoom = panelViewModel::sendZoom,
             onBgInv = panelViewModel::sendBgInv,
         ),
+        videoActions = VideoActions(
+            onPlayPause = panelViewModel::sendVideoPlayPause,
+            onSeek = panelViewModel::sendVideoSeek,
+            onSeekTo = panelViewModel::sendVideoSeekTo,
+            onPrevious = panelViewModel::sendVideoPrevious,
+            onNext = panelViewModel::sendVideoNext,
+            onSpeed = panelViewModel::sendVideoSpeed,
+            onRequestState = panelViewModel::requestVideoState,
+            onSeekSecondsChange = panelViewModel::onSeekSecondsChange,
+        ),
     )
 }

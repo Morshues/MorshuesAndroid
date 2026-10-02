@@ -26,6 +26,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.morshues.morshuesandroid.R
 import com.morshues.morshuesandroid.data.websocket.WebSocketManager.ConnectionStatus
+import com.morshues.morshuesandroid.data.websocket.WebSocketManager.VideoState
 import com.morshues.morshuesandroid.ui.components.CommonTopBar
 import com.morshues.morshuesandroid.ui.theme.MainAndroidTheme
 
@@ -50,6 +51,7 @@ fun RemoteControlScreen(
     baseActions: PanelBaseActions,
     mainPageActions: MainPageActions,
     linkPageActions: LinkPageActions,
+    videoActions: VideoActions,
 ) {
     Scaffold(
         topBar = {
@@ -81,9 +83,12 @@ fun RemoteControlScreen(
                     RemoteControlPanel(
                         currentScreen = uiState.currentScreen,
                         url = panelUiState.url,
+                        videoState = panelUiState.videoState,
+                        seekSeconds = panelUiState.seekSeconds,
                         baseActions = baseActions,
                         mainPageActions = mainPageActions,
                         linkPageActions = linkPageActions,
+                        videoActions = videoActions,
                     )
                 }
             }
@@ -95,9 +100,12 @@ fun RemoteControlScreen(
 private fun RemoteControlPanel(
     currentScreen: String?,
     url: String,
+    videoState: VideoState?,
+    seekSeconds: Int,
     baseActions: PanelBaseActions,
     mainPageActions: MainPageActions,
     linkPageActions: LinkPageActions,
+    videoActions: VideoActions,
 ) {
     Column(
         modifier = Modifier
@@ -166,6 +174,11 @@ private fun RemoteControlPanel(
             "LinkPageActivity" -> LinkPageScreen(
                 actions = linkPageActions,
             )
+            "VideoPlayerActivity" -> VideoScreen(
+                videoState = videoState,
+                seekSeconds = seekSeconds,
+                actions = videoActions,
+            )
             else -> MainPageScreen(
                 url = url,
                 actions = mainPageActions,
@@ -189,6 +202,7 @@ fun RemoteControlConnectPreview() {
             baseActions = PanelBaseActions({}, {}, {}),
             mainPageActions = MainPageActions({}, {}, {}),
             linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
 }
@@ -208,6 +222,7 @@ fun RemoteControlConnectingPreview() {
             baseActions = PanelBaseActions({}, {}, {}),
             mainPageActions = MainPageActions({}, {}, {}),
             linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
 }
@@ -228,6 +243,7 @@ fun RemoteControlMainPagePreview() {
             baseActions = PanelBaseActions({}, {}, {}),
             mainPageActions = MainPageActions({}, {}, {}),
             linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
 }
@@ -248,6 +264,33 @@ fun RemoteControlLinkPagePreview() {
             baseActions = PanelBaseActions({}, {}, {}),
             mainPageActions = MainPageActions({}, {}, {}),
             linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Panel - VideoPlayerActivity")
+@Composable
+fun RemoteControlVideoPreview() {
+    MainAndroidTheme {
+        RemoteControlScreen(
+            navController = rememberNavController(),
+            uiState = RemoteControlViewModel.UiState(
+                host = "192.168.1.100", port = "8765",
+                connectionStatus = ConnectionStatus.Connected,
+                currentScreen = "VideoPlayerActivity",
+            ),
+            panelUiState = RemoteControlPanelViewModel.UiState(
+                videoState = VideoState(
+                    title = "Sample Video", index = 0, count = 3,
+                    positionMs = 83_000, durationMs = 1_520_000, isPlaying = true,
+                ),
+            ),
+            connectionActions = ConnectionActions({}, {}, {}),
+            baseActions = PanelBaseActions({}, {}, {}),
+            mainPageActions = MainPageActions({}, {}, {}),
+            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
 }
@@ -267,6 +310,7 @@ fun RemoteControlErrorPreview() {
             baseActions = PanelBaseActions({}, {}, {}),
             mainPageActions = MainPageActions({}, {}, {}),
             linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
 }

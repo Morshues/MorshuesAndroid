@@ -49,6 +49,21 @@ android {
     }
 }
 
+androidComponents {
+    onVariants { variant ->
+        val mergeNetworkSecurityConfig = tasks.register<MergeNetworkSecurityConfigTask>(
+            "merge${variant.name.replaceFirstChar { it.uppercase() }}NetworkSecurityConfig"
+        ) {
+            baseConfig.set(layout.projectDirectory.file("src/main/res/xml/network_security_config.xml"))
+            localDomains.from(layout.projectDirectory.file("network_security_config.local.xml"))
+        }
+        variant.sources.res?.addGeneratedSourceDirectory(
+            mergeNetworkSecurityConfig,
+            MergeNetworkSecurityConfigTask::outputDir
+        )
+    }
+}
+
 dependencies {
     // AndroidX & Material
     implementation(libs.androidx.core.ktx)
@@ -93,4 +108,36 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     debugImplementation(libs.androidx.ui.tooling)
+}
+
+// Inserts the git-ignored network_security_config.local.xml into the <domain-config> of
+// res/xml/network_security_config.xml, so machine-specific test hosts never get committed.
+abstract class MergeNetworkSecurityConfigTask : DefaultTask() {
+    @get:InputFile
+    abstract val baseConfig: RegularFileProperty
+
+    // A file collection (not a RegularFileProperty) so the local file is allowed to be absent.
+    @get:InputFiles
+    abstract val localDomains: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun merge() {
+        val baseFile = baseConfig.get().asFile
+        val base = baseFile.readText()
+        val local = localDomains.files.filter { it.isFile }.joinToString("\n") { it.readText().trimEnd() }
+        val merged = if (local.isBlank()) {
+            base
+        } else {
+            val anchor = Regex("""(?m)^[ \t]*</domain-config>""").find(base)
+                ?: error("No </domain-config> found in $baseFile")
+            base.substring(0, anchor.range.first) + local + "\n" + base.substring(anchor.range.first)
+        }
+        outputDir.file("xml/network_security_config.xml").get().asFile.apply {
+            parentFile.mkdirs()
+            writeText(merged)
+        }
+    }
 }

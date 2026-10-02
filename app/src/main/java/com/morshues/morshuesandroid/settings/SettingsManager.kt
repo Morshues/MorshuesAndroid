@@ -2,6 +2,7 @@ package com.morshues.morshuesandroid.settings
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -114,6 +115,18 @@ class SettingsManager(private val context: Context) {
         }
     }
 
+    fun getRemoteControlSeekSeconds(): Flow<Int> {
+        return context.dataStore.data.map { preferences ->
+            preferences[REMOTE_CONTROL_SEEK_SECONDS_KEY] ?: DEFAULT_REMOTE_CONTROL_SEEK_SECONDS
+        }
+    }
+
+    suspend fun setRemoteControlSeekSeconds(seconds: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[REMOTE_CONTROL_SEEK_SECONDS_KEY] = seconds
+        }
+    }
+
     companion object {
         const val DEFAULT_SERVER_PATH = "http://10.0.2.2:3000/"
         private val DEFAULT_ROOT_URL_SET = setOf(DEFAULT_SERVER_PATH)
@@ -139,5 +152,8 @@ class SettingsManager(private val context: Context) {
 
         private val REMOTE_CONTROL_HOST_KEY = stringPreferencesKey("remote_control_host")
         private val REMOTE_CONTROL_PORT_KEY = stringPreferencesKey("remote_control_port")
+
+        const val DEFAULT_REMOTE_CONTROL_SEEK_SECONDS = 10
+        private val REMOTE_CONTROL_SEEK_SECONDS_KEY = intPreferencesKey("remote_control_seek_seconds")
     }
 }
