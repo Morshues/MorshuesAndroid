@@ -1,5 +1,14 @@
 package com.morshues.morshuesandroid.ui.remotecontrol
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,13 +25,20 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.morshues.morshuesandroid.ui.theme.MainAndroidTheme
 
 @Composable
@@ -35,6 +51,48 @@ fun WebSocketConnectScreen(
     onPortChange: (String) -> Unit,
     onConnect: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val activity = LocalActivity.current
+    var permissionDenied by remember { mutableStateOf(false) }
+    // Once denied too many times the system stops showing the dialog; only app settings can grant it
+    var permissionPermanentlyDenied by remember { mutableStateOf(false) }
+
+    val openAppSettings = {
+        context.startActivity(
+            Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", context.packageName, null),
+            )
+        )
+    }
+
+    // Android 17+ blocks LAN connections unless ACCESS_LOCAL_NETWORK is granted
+    val localNetworkPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        permissionDenied = !granted
+        permissionPermanentlyDenied = !granted && activity != null &&
+            !activity.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_LOCAL_NETWORK)
+        if (granted) onConnect()
+    }
+
+    val connectWithPermission = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_LOCAL_NETWORK) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            if (permissionPermanentlyDenied) {
+                openAppSettings()
+            } else {
+                localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+            }
+        } else {
+            permissionDenied = false
+            permissionPermanentlyDenied = false
+            onConnect()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -96,7 +154,7 @@ fun WebSocketConnectScreen(
             }
         } else {
             Button(
-                onClick = onConnect,
+                onClick = connectWithPermission,
                 enabled = host.isNotBlank() && port.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -104,13 +162,24 @@ fun WebSocketConnectScreen(
             }
         }
 
-        if (error != null) {
+        val displayError = if (permissionDenied) {
+            "Local network permission is required to connect to LAN devices"
+        } else {
+            error
+        }
+        if (displayError != null) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = error,
+                text = displayError,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
             )
+        }
+
+        if (permissionDenied && permissionPermanentlyDenied) {
+            TextButton(onClick = openAppSettings) {
+                Text("Open Settings to grant permission")
+            }
         }
     }
 }
