@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.withLock
 import okhttp3.Interceptor
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
+import java.io.IOException
 
 class TokenInterceptor(
     private val sessionStore: SessionStore,
@@ -20,8 +21,17 @@ class TokenInterceptor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
 
-        val token = runBlocking {
-            getValidAccessToken()
+        // Non-IOExceptions thrown from an interceptor are rethrown by OkHttp on its
+        // dispatcher thread and crash the app, so treat them as "no token available".
+        val token = try {
+            runBlocking {
+                getValidAccessToken()
+            }
+        } catch (e: IOException) {
+            throw e
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
 
         // If no token available, return 401 response without making the request
@@ -58,7 +68,7 @@ class TokenInterceptor(
 
                     if (latestExpiry != null && latestExpiry - System.currentTimeMillis() < REFRESH_THRESHOLD) {
                         val refreshToken = sessionStore.refreshToken.first()
-                            ?: throw IllegalStateException("No refresh token available")
+                            ?: return null
                         val deviceId = sessionStore.getOrCreateDeviceId()
 
                         val newTokens = authRepository.refresh(refreshToken, deviceId)
@@ -72,7 +82,7 @@ class TokenInterceptor(
                         return newTokens.accessToken
                     }
 
-                    return latestToken ?: throw IllegalStateException("No access token available")
+                    return latestToken
                 }
             }
         }

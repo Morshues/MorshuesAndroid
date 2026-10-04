@@ -49,7 +49,6 @@ class TokenAuthenticator(
 
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    sessionStore.clear()
                     null
                 }
             }
