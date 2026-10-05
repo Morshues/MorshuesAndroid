@@ -36,6 +36,7 @@ fun RemoteControlRoute(navController: NavController) {
             onJoystickMove = panelViewModel::sendScroll,
             onZoom = panelViewModel::sendZoom,
             onBgInv = panelViewModel::sendBgInv,
+            onScrollScaleChange = panelViewModel::onScrollScaleChange,
         ),
         videoActions = VideoActions(
             onPlayPause = panelViewModel::sendVideoPlayPause,

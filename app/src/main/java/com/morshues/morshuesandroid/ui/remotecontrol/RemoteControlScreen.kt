@@ -85,6 +85,7 @@ fun RemoteControlScreen(
                         url = panelUiState.url,
                         videoState = panelUiState.videoState,
                         seekSeconds = panelUiState.seekSeconds,
+                        scrollScale = panelUiState.scrollScale,
                         baseActions = baseActions,
                         mainPageActions = mainPageActions,
                         linkPageActions = linkPageActions,
@@ -102,6 +103,7 @@ private fun RemoteControlPanel(
     url: String,
     videoState: VideoState?,
     seekSeconds: Int,
+    scrollScale: Int,
     baseActions: PanelBaseActions,
     mainPageActions: MainPageActions,
     linkPageActions: LinkPageActions,
@@ -172,6 +174,7 @@ private fun RemoteControlPanel(
 
         when (currentScreen) {
             "LinkPageActivity" -> LinkPageScreen(
+                scrollScale = scrollScale,
                 actions = linkPageActions,
             )
             "VideoPlayerActivity" -> VideoScreen(
@@ -201,7 +204,7 @@ fun RemoteControlConnectPreview() {
             connectionActions = ConnectionActions({}, {}, {}),
             baseActions = PanelBaseActions({}, {}, {}),
             mainPageActions = MainPageActions({}, {}, {}),
-            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}, {}),
             videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
@@ -221,7 +224,7 @@ fun RemoteControlConnectingPreview() {
             connectionActions = ConnectionActions({}, {}, {}),
             baseActions = PanelBaseActions({}, {}, {}),
             mainPageActions = MainPageActions({}, {}, {}),
-            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}, {}),
             videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
@@ -242,7 +245,7 @@ fun RemoteControlMainPagePreview() {
             connectionActions = ConnectionActions({}, {}, {}),
             baseActions = PanelBaseActions({}, {}, {}),
             mainPageActions = MainPageActions({}, {}, {}),
-            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}, {}),
             videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
@@ -263,7 +266,7 @@ fun RemoteControlLinkPagePreview() {
             connectionActions = ConnectionActions({}, {}, {}),
             baseActions = PanelBaseActions({}, {}, {}),
             mainPageActions = MainPageActions({}, {}, {}),
-            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}, {}),
             videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
@@ -289,7 +292,7 @@ fun RemoteControlVideoPreview() {
             connectionActions = ConnectionActions({}, {}, {}),
             baseActions = PanelBaseActions({}, {}, {}),
             mainPageActions = MainPageActions({}, {}, {}),
-            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}, {}),
             videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
@@ -309,7 +312,7 @@ fun RemoteControlErrorPreview() {
             connectionActions = ConnectionActions({}, {}, {}),
             baseActions = PanelBaseActions({}, {}, {}),
             mainPageActions = MainPageActions({}, {}, {}),
-            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}),
+            linkPageActions = LinkPageActions({ _, _ -> }, {}, {}, {}),
             videoActions = VideoActions({}, {}, {}, {}, {}, {}, {}, {}),
         )
     }

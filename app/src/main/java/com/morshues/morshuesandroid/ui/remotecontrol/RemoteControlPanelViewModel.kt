@@ -29,6 +29,7 @@ class RemoteControlPanelViewModel @Inject constructor(
         val url: String = "",
         val videoState: WebSocketManager.VideoState? = null,
         val seekSeconds: Int = SettingsManager.DEFAULT_REMOTE_CONTROL_SEEK_SECONDS,
+        val scrollScale: Int = SettingsManager.DEFAULT_REMOTE_CONTROL_SCROLL_SCALE,
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -37,7 +38,8 @@ class RemoteControlPanelViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val seconds = settingsManager.getRemoteControlSeekSeconds().first()
-            _uiState.update { it.copy(seekSeconds = seconds) }
+            val scrollScale = settingsManager.getRemoteControlScrollScale().first()
+            _uiState.update { it.copy(seekSeconds = seconds, scrollScale = scrollScale) }
         }
 
         webSocketManager.videoState
@@ -49,6 +51,12 @@ class RemoteControlPanelViewModel @Inject constructor(
         if (seconds == _uiState.value.seekSeconds) return
         _uiState.update { it.copy(seekSeconds = seconds) }
         viewModelScope.launch { settingsManager.setRemoteControlSeekSeconds(seconds) }
+    }
+
+    fun onScrollScaleChange(scale: Int) {
+        if (scale == _uiState.value.scrollScale) return
+        _uiState.update { it.copy(scrollScale = scale) }
+        viewModelScope.launch { settingsManager.setRemoteControlScrollScale(scale) }
     }
 
     fun onUrlChange(url: String) {
@@ -77,10 +85,11 @@ class RemoteControlPanelViewModel @Inject constructor(
     // {"action":"link_page_navigate","data":{"instruction":"scroll","direction":"up|down|left|right","delta":N}}
     fun sendScroll(x: Float, y: Float) {
         if (abs(x) < 0.05f && abs(y) < 0.05f) return
+        val scale = _uiState.value.scrollScale
         webSocketManager.send("link_page_navigate", buildJsonObject {
             put("instruction", "scroll")
-            put("x", x * -100)
-            put("y", y * -100)
+            put("x", x * -scale)
+            put("y", y * -scale)
         })
     }
 

@@ -127,6 +127,18 @@ class SettingsManager(private val context: Context) {
         }
     }
 
+    fun getRemoteControlScrollScale(): Flow<Int> {
+        return context.dataStore.data.map { preferences ->
+            preferences[REMOTE_CONTROL_SCROLL_SCALE_KEY] ?: DEFAULT_REMOTE_CONTROL_SCROLL_SCALE
+        }
+    }
+
+    suspend fun setRemoteControlScrollScale(scale: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[REMOTE_CONTROL_SCROLL_SCALE_KEY] = scale
+        }
+    }
+
     companion object {
         const val DEFAULT_SERVER_PATH = "http://10.0.2.2:3000/"
         private val DEFAULT_ROOT_URL_SET = setOf(DEFAULT_SERVER_PATH)
@@ -155,5 +167,8 @@ class SettingsManager(private val context: Context) {
 
         const val DEFAULT_REMOTE_CONTROL_SEEK_SECONDS = 10
         private val REMOTE_CONTROL_SEEK_SECONDS_KEY = intPreferencesKey("remote_control_seek_seconds")
+
+        const val DEFAULT_REMOTE_CONTROL_SCROLL_SCALE = 100
+        private val REMOTE_CONTROL_SCROLL_SCALE_KEY = intPreferencesKey("remote_control_scroll_scale")
     }
 }
